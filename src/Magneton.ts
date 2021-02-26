@@ -29,7 +29,7 @@ export class Magneton extends Client {
 		const folder = type === "development" ? "./src/commands" : "./build/commands";
 		const dirs = readdirSync(`${folder}`);
 		dirs.forEach(async dir => {
-			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".ts") || d.endsWith(".js"));
+			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".js") || d.endsWith(".ts"));
 			for(let file of files) {
 				import(`../${folder}/${dir}/${file}`).then(instance => {
 					const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
@@ -45,7 +45,7 @@ export class Magneton extends Client {
 		const folder = type === "development" ? "./src/events" : "./build/events";
 		const dirs = readdirSync(`${folder}`);
 		dirs.forEach(async dir => {
-			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".ts") || d.endsWith(".js"));
+			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".js") || d.endsWith(".ts"));
 			for(let file of files) {
 				import(`../${folder}/${dir}/${file}`).then(instance => {
 					const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
