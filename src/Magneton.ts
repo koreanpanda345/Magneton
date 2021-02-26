@@ -15,22 +15,23 @@ export class Magneton extends Client {
 		this._drafts = new Collection<string, DraftSystem>();
 	}
 
-	public start() {
-		this.loadFiles();
+	public start(type: "development" | "production") {
+		this.loadFiles(type);
 		this.login(process.env.TOKEN);
 	}
 
-	public loadFiles() {
-		this.loadCommands();
-		this.loadEvents();
+	public loadFiles(type: "development" | "production") {
+		this.loadCommands(type);
+		this.loadEvents(type);
 	}
 
-	public loadCommands() {
-		const dirs = readdirSync("./src/commands");
+	public loadCommands(type: "development" | "production") {
+		const folder = type === "development" ? "./src/commands" : "./build/commands";
+		const dirs = readdirSync(`${folder}`);
 		dirs.forEach(async dir => {
-			const files = readdirSync(`./src/commands/${dir}`).filter(d => d.endsWith(".ts"));
+			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".ts") || d.endsWith(".js"));
 			for(let file of files) {
-				import(`./commands/${dir}/${file}`).then(instance => {
+				import(`../${folder}/${dir}/${file}`).then(instance => {
 					const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
 					const command: ICommand = new instance[`${name}`](this);
 					console.log(`Command ${command.name} was loaded`);
@@ -40,12 +41,13 @@ export class Magneton extends Client {
 		});
 	}
 
-	public loadEvents() {
-		const dirs = readdirSync("./src/events");
+	public loadEvents(type: "development" | "production") {
+		const folder = type === "development" ? "./src/events" : "./build/events";
+		const dirs = readdirSync(`${folder}`);
 		dirs.forEach(async dir => {
-			const files = readdirSync(`./src/events/${dir}`).filter(d => d.endsWith(".ts"));
+			const files = readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".ts") || d.endsWith(".js"));
 			for(let file of files) {
-				import(`./events/${dir}/${file}`).then(instance => {
+				import(`../${folder}/${dir}/${file}`).then(instance => {
 					const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
 					const event: any = new instance[`${name}`](this);
 					this._events.set(event.name, event);
