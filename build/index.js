@@ -13,4 +13,4 @@ mongoose_1.default.connect(process.env.MONGOOSE_CONNECTION_URL, {
     useFindAndModify: true
 });
 const client = new Magneton_1.Magneton();
-client.start();
+client.start("production");

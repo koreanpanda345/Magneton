@@ -29,20 +29,21 @@ class Magneton extends discord_js_1.Client {
         this._events = new discord_js_1.Collection();
         this._drafts = new discord_js_1.Collection();
     }
-    start() {
-        this.loadFiles();
+    start(type) {
+        this.loadFiles(type);
         this.login(process.env.TOKEN);
     }
-    loadFiles() {
-        this.loadCommands();
-        this.loadEvents();
+    loadFiles(type) {
+        this.loadCommands(type);
+        this.loadEvents(type);
     }
-    loadCommands() {
-        const dirs = fs_1.readdirSync("./src/commands");
+    loadCommands(type) {
+        const folder = type === "development" ? "./src/commands" : "./build/commands";
+        const dirs = fs_1.readdirSync(`${folder}`);
         dirs.forEach(async (dir) => {
-            const files = fs_1.readdirSync(`./src/commands/${dir}`).filter(d => d.endsWith(".ts"));
+            const files = fs_1.readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".js") || d.endsWith(".ts"));
             for (let file of files) {
-                Promise.resolve().then(() => __importStar(require(`./commands/${dir}/${file}`))).then(instance => {
+                Promise.resolve().then(() => __importStar(require(`../${folder}/${dir}/${file}`))).then(instance => {
                     const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
                     const command = new instance[`${name}`](this);
                     console.log(`Command ${command.name} was loaded`);
@@ -51,12 +52,13 @@ class Magneton extends discord_js_1.Client {
             }
         });
     }
-    loadEvents() {
-        const dirs = fs_1.readdirSync("./src/events");
+    loadEvents(type) {
+        const folder = type === "development" ? "./src/events" : "./build/events";
+        const dirs = fs_1.readdirSync(`${folder}`);
         dirs.forEach(async (dir) => {
-            const files = fs_1.readdirSync(`./src/events/${dir}`).filter(d => d.endsWith(".ts"));
+            const files = fs_1.readdirSync(`${folder}/${dir}`).filter(d => d.endsWith(".js") || d.endsWith(".ts"));
             for (let file of files) {
-                Promise.resolve().then(() => __importStar(require(`./events/${dir}/${file}`))).then(instance => {
+                Promise.resolve().then(() => __importStar(require(`../${folder}/${dir}/${file}`))).then(instance => {
                     const name = file.split(".")[0].charAt(0).toUpperCase() + file.split(".")[0].slice(1);
                     const event = new instance[`${name}`](this);
                     this._events.set(event.name, event);
