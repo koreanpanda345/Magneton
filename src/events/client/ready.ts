@@ -1,6 +1,5 @@
 
 import { IEvent } from './../../types/events';
-import { CommandContext } from '../../types/CommandContext';
 import { Magneton } from '../../Magneton';
 
 export class Ready implements IEvent {

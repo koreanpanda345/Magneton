@@ -23,6 +23,32 @@ class DraftSystem {
     isPlayersTurn(record, userId) {
         return userId === record.currentPlayer;
     }
+    async makeupPick(ctx, userId, prefix, pokemon, text) {
+        let record = await this.whichLeague(prefix);
+        let player = this.getCurrentPlayer(record);
+        if ((player === null || player === void 0 ? void 0 : player.skips) === 0)
+            return ctx.sendMessage("You don't have any makeup picks.");
+        if (!record)
+            return ctx.sendMessage("There doesn't seem like there is a league with that prefix");
+        if (!this.doesPokemonExist(pokemon))
+            return ctx.sendMessage("That is not a valid pokemon.");
+        if (this.isPokemonTaken(record, pokemon).taken === true) {
+            let result = this.isPokemonTaken(record, pokemon);
+            return ctx.sendMessage(`${result.pokemon} has already been drafted by ${(await ctx.client.users.fetch(result.owner)).username}`);
+        }
+        let name = dex_1.Dex.getSpecies(pokemon);
+        let embed = new discord_js_1.MessageEmbed();
+        embed.setTitle("Makeup Pick");
+        embed.setDescription(`<@${ctx.userId}> has selected ${name.name} as their make up pick.`);
+        let img = this.getImageForPokemon(name.name);
+        embed.setImage(`https://play.pokemonshowdown.com/sprites/ani/${img}.gif`);
+        embed.setColor("RANDOM");
+        record.pokemon.push(name.name);
+        player === null || player === void 0 ? void 0 : player.pokemon.push(name.name);
+        player.skips--;
+        record.save().catch(error => console.error(error));
+        ctx.sendMessage(embed);
+    }
     async askForPick(record) {
         return await new Promise(async (resolve) => {
             var _a;
@@ -56,7 +82,7 @@ class DraftSystem {
     }
     async editPick(ctx, userId, prefix, oldPokemon, newPokemon) {
         let record = await this.whichLeague(prefix);
-        let player = this.getCurrentPlayer(record);
+        let player = record.players.find(x => x.userId === userId);
         if (!record)
             return ctx.sendMessage("There doesn't seem like there is a league with the prefix");
         if (!this.doesPokemonExist(newPokemon))
@@ -76,6 +102,16 @@ class DraftSystem {
         draftEmbed.setColor("RANDOM");
         console.log(record.sheetId);
         this._ctx.sendMessage(draftEmbed);
+        if (record.sheetId !== undefined && record.sheetId !== "none") {
+            const gs = new GoogleSheets_1.GoogleSheets();
+            await gs.update({ spreadsheetId: record.sheetId, data: [[
+                        (await ctx.client.users.fetch(player.userId)).username,
+                        oldName.name,
+                        newName.name
+                    ]] });
+            console.log("Updated Sheets");
+        }
+        record.save().catch(error => console.error());
     }
     async makePick(ctx, userId, prefix, pokemon, text) {
         let record = await this.whichLeague(prefix);

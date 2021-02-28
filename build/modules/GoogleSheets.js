@@ -22,6 +22,36 @@ class GoogleSheets {
         });
         return client;
     }
+    async update(data) {
+        const client = await this.connect();
+        const gsapi = googleapis_1.google.sheets({ version: 'v4', auth: client });
+        let _data = await this.get(data.spreadsheetId);
+        let newData = _data.values.map((row) => {
+            if (row[0] == data.data[0][0] && row[1] == data.data[0][1]) {
+                row[1] = data.data[0][2];
+            }
+            return row;
+        });
+        const opt = {
+            spreadsheetId: data.spreadsheetId,
+            range: "'Raw Draft Data'!A2:B",
+            valueInputOption: "USER_ENTERED",
+            resource: {
+                values: newData
+            }
+        };
+        let res = await gsapi.spreadsheets.values.update(opt);
+    }
+    async get(spreadsheetId) {
+        const client = await this.connect();
+        const gsapi = googleapis_1.google.sheets({ version: 'v4', auth: client });
+        const opt = {
+            spreadsheetId,
+            range: "'Raw Draft Data'!A2:B",
+        };
+        let res = await gsapi.spreadsheets.values.get(opt);
+        return res.data;
+    }
     async add(data) {
         const client = await this.connect();
         const gsapi = googleapis_1.google.sheets({ version: 'v4', auth: client });
@@ -34,9 +64,7 @@ class GoogleSheets {
                 values: data.data
             }
         };
-        console.debug(opt);
         let res = await gsapi.spreadsheets.values.append(opt);
-        console.log(res);
     }
 }
 exports.GoogleSheets = GoogleSheets;

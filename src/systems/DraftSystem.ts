@@ -25,6 +25,39 @@ export class DraftSystem {
 		return userId === record.currentPlayer;
 	}
 
+	public async makeupPick(ctx: CommandContext, userId: string, prefix: string, pokemon: string, text?: string) {
+		let record = await this.whichLeague(prefix) as IDraftTimer;
+		let player = this.getCurrentPlayer(record);
+		if(player?.skips === 0) return ctx.sendMessage("You don't have any makeup picks.");
+		if(!record) return ctx.sendMessage("There doesn't seem like there is a league with that prefix");
+		if(!this.doesPokemonExist(pokemon)) return ctx.sendMessage("That is not a valid pokemon.");
+		if(this.isPokemonTaken(record, pokemon).taken === true) {
+			let result = this.isPokemonTaken(record, pokemon);
+			return ctx.sendMessage(`${result.pokemon} has already been drafted by ${(await ctx.client.users.fetch(result.owner!)).username}`);
+		}
+
+		let name = Dex.getSpecies(pokemon);
+
+		let embed = new MessageEmbed();
+		embed.setTitle("Makeup Pick");
+		embed.setDescription(`<@${ctx.userId}> has selected ${name.name} as their make up pick.`);
+		let img = this.getImageForPokemon(name.name);
+		embed.setImage(`https://play.pokemonshowdown.com/sprites/ani/${img}.gif`)
+		embed.setColor("RANDOM");
+
+		record.pokemon.push(name.name);
+		player?.pokemon.push(name.name);
+		player!.skips--;
+
+		if(record.sheetId !== undefined && record.sheetId !== "none") {
+			await this.sendToSheet(record.sheetId, [[(await this._ctx.client.users.fetch(userId)).username, name.name]]);
+			console.log("Set to sheets");
+		}
+
+		record.save().catch(error => console.error(error));
+		ctx.sendMessage(embed);
+	}
+
 	public async askForPick(record: IDraftTimer): Promise<MessageCollector> {
 		return await new Promise(async (resolve) => {
 			let who = this.getCurrentPlayer(record)?.userId;
@@ -57,7 +90,7 @@ export class DraftSystem {
 
 	public async editPick(ctx: CommandContext, userId: string, prefix: string, oldPokemon: string, newPokemon: string) {
 		let record = await this.whichLeague(prefix) as IDraftTimer;
-		let player = this.getCurrentPlayer(record);
+		let player = record.players.find(x => x.userId === userId)!;
 		if(!record) return ctx.sendMessage("There doesn't seem like there is a league with the prefix");
 		if(!this.doesPokemonExist(newPokemon)) return ctx.sendMessage("That is a not a valid pokemon");
 		if(this.isPokemonTaken(record, newPokemon).taken === true) {
@@ -76,6 +109,16 @@ export class DraftSystem {
 		draftEmbed.setColor("RANDOM");
 		console.log(record.sheetId);
 		this._ctx.sendMessage(draftEmbed);
+		if(record.sheetId !== undefined && record.sheetId !== "none") {
+			const gs = new GoogleSheets();
+			await gs.update({spreadsheetId: record.sheetId, data: [[
+				(await ctx.client.users.fetch(player.userId)).username,
+				oldName.name,
+				newName.name
+			]]});
+			console.log("Updated Sheets");
+		}
+		record.save().catch(error => console.error());
 	}
 
 	public async makePick(ctx: CommandContext, userId: string, prefix: string, pokemon: string, text: string) {
