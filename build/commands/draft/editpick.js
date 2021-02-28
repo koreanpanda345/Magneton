@@ -8,7 +8,7 @@ const DraftTimerSchema_1 = __importDefault(require("../../database/DraftTimerSch
 class Editpick {
     constructor() {
         this.name = "editpick";
-        this.description = "Allows you to pick for someone.";
+        this.description = "Edits a player's pick";
         this.usage = ["m!leftpicks <@who> <league prefix> <pokemon>"];
         this.permission = {
             user: ["MANAGE_GUILD"]

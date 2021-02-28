@@ -7,7 +7,7 @@ import { PermissionString } from 'discord.js';
 
 export class Editpick implements ICommand {
 	name = "editpick";
-	description = "Allows you to pick for someone.";
+	description = "Edits a player's pick";
 	usage = ["m!leftpicks <@who> <league prefix> <pokemon>"];
 	permission: {user: PermissionString[]} = {
 		user: ["MANAGE_GUILD"]
