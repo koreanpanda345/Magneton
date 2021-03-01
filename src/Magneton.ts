@@ -7,14 +7,12 @@ export class Magneton extends Client {
 	private readonly _commands: Collection<string, ICommand>;
 	private readonly _events: Collection<string, IEvent>;
 	private readonly _drafts: Collection<string, DraftSystem>;
-	private readonly _timers: Collection<string, any>;
 
 	constructor() {
 		super();
 		this._commands = new Collection<string, ICommand>();
 		this._events = new Collection<string, IEvent>();
 		this._drafts = new Collection<string, DraftSystem>();
-		this._timer = new Collection<string, any>();
 	}
 
 	public start(type: "development" | "production") {
@@ -62,5 +60,4 @@ export class Magneton extends Client {
 	public get commands() { return this._commands; }
 	public get events() { return this._events; }
 	public get drafts() { return this._drafts; }
-	public get timers() { return this._timers; }
 }

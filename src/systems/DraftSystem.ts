@@ -6,19 +6,27 @@ import {Dex} from "@pkmn/dex";
 import { MessageEmbed, Message, MessageCollector, DMChannel } from "discord.js";
 import moment from "moment";
 import { GoogleSheets } from "../modules/GoogleSheets";
-const Timer = require("i-event-timer");
+import Timeout, { TimeoutInstance } from 'smart-timeout';
 export class DraftSystem {
 	constructor(
 		private _ctx: CommandContext
 	){
 	}
-	
-	public timer = new Timer();
-
+	private _stop: boolean = false;
 	public async start(record: IDraftTimer) {
 		let ctx = this._ctx;
 		ctx.sendMessage(`Draft Timer has been turned on!`);
 		await this.askForPick(record);
+		Timeout.create(record.leagueName, async () => {
+			await this.skip(record);
+		}, record.timer);
+	}
+
+	private async setTimer(record: IDraftTimer, time: number) {
+		Timeout.clear(record.leagueName, true);
+		Timeout.create(record.leagueName, async () => {
+			await this.skip(record);
+		}, time);
 	}
 
 	public isPlayersTurn(record: IDraftTimer, userId: string) {
@@ -58,12 +66,29 @@ export class DraftSystem {
 		ctx.sendMessage(embed);
 	}
 
+	public async getTimeRemaining(record: IDraftTimer, ctx: CommandContext) {
+		return await new Promise(async (resolve) => {
+			let embed = new MessageEmbed();
+			embed.setTitle("Time Remaining.");
+			let time = moment(Timeout.remaining(record.leagueName));
+			let str = `<@${record.currentPlayer}> has ${(time.minutes() >= 60 ? `${time.hours()} hours` : time.minutes() > 0 ? `${time.minutes()} minutes` : `${time.seconds()} seconds`)} left`;
+			embed.setDescription(str);
+			embed.setColor("RANDOM");
+
+			ctx.sendMessage(embed);
+		});
+	}
+
 	public async askForPick(record: IDraftTimer): Promise<MessageCollector> {
 		return await new Promise(async (resolve) => {
+
 			let who = this.getCurrentPlayer(record)?.userId;
-			(await this._ctx.client.users.fetch(who!)).createDM().then(dm => {
-				let player = record.players.find(x => x.userId === record.currentPlayer)!;
+			let player = record.players.find(x => x.userId === record.currentPlayer)!;
+			if(player.skips >= record.totalSkips) return await this.next(record);
+			(await this._ctx.client.users.fetch(who!)).createDM().then(async dm => {
 				let time = moment(player.skips === 0 ? record.timer : Math.floor(Math.round(record.timer / (2 * player.skips))));
+				console.debug(time.milliseconds());
+				await this.setTimer(record, player.skips === 0 ? record.timer : Math.floor(Math.round(record.timer / (2 * player.skips))));
 				let pickEmbed = new MessageEmbed()
 						.setTitle(`Its your pick in ${this._ctx.guild?.name}`)
 						.setDescription(`Your league's prefix is ${record.prefix}. To draft a pokemon type in \`m!pick ${record.prefix} <pokemon name>\` example: \`m!pick ${record.prefix} lopunny\``)
@@ -76,14 +101,6 @@ export class DraftSystem {
 					.addField("Timer:", `${record.pause ? "Timer Is off" : (time.minutes() > 60 ? `${time.hours()} hours` : `${time.minutes()} minutes`)}`)
 					.setColor("RANDOM");
 				this._ctx.sendMessage(serverEmbed);
-				this.timer = new Timer(time.milliseconds(), [(time.milliseconds() / 2)]);
-				this.timer.startTimer();
-				this.timer.on("notify", (n: number) => {
-					dm.send(`You have ${moment(n).minutes()} minutes left before you get skipped.`);
-				});
-				this.timer.on("end", () => {
-					return this.skip(record);
-				})
 			});
 		});
 	}
@@ -141,7 +158,6 @@ export class DraftSystem {
 		draftEmbed.setColor("RANDOM");
 		console.log(record.sheetId);
 		this._ctx.sendMessage(draftEmbed);
-		this.timer.stopTimer();
 		if(record.sheetId !== undefined && record.sheetId !== "none") {
 			await this.sendToSheet(record.sheetId, [[(await this._ctx.client.users.fetch(userId)).username, name.name]]);
 			console.log("Set to sheets");
@@ -165,7 +181,6 @@ export class DraftSystem {
 	}
 
 	public async next(record: IDraftTimer) {
-		this.timer.resetTime();
 		let player = record.players.find(x => x.userId === record.currentPlayer);
 		if(record.direction === "down") {
 			if(player?.order === record.players.length) {
@@ -239,8 +254,9 @@ export class DraftSystem {
 		return record.players.find(x => x.userId === record.currentPlayer);
 	}
 
-	private async stop(record: IDraftTimer) {
+	public async stop(record: IDraftTimer) {
 		this._ctx.sendMessage("Stopping Draft");
+		if(Timeout.exists(record.leagueName)) Timeout.clear(record.leagueName, true);
 		this._ctx.client.drafts.delete(record.prefix);
 	}
 

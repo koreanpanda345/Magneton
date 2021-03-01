@@ -9,6 +9,7 @@ const discord_js_1 = require("discord.js");
 class Setdraft {
     constructor() {
         this.name = "setdraft";
+        this.category = "draft";
         this.permission = {
             user: ["MANAGE_GUILD"]
         };

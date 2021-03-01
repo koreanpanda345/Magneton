@@ -12,6 +12,7 @@ class Startdraft {
         this.permissions = {
             user: ["MANAGE_GUILD"]
         };
+        this.category = "draft";
         this.invoke = async (ctx) => {
             return await new Promise((resolve) => {
                 DraftTimerSchema_1.default.findOne({ channelId: ctx.channelId }, (error, record) => {

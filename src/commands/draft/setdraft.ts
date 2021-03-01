@@ -6,6 +6,7 @@ import { Message, TextChannel, PermissionString, MessageEmbed } from "discord.js
 
 export class Setdraft implements ICommand {
 	name = "setdraft";
+	category = "draft";
 	permission: {user: PermissionString[]} = {
 		user: ["MANAGE_GUILD"]
 	}

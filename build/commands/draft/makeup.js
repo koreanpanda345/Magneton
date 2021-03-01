@@ -10,6 +10,7 @@ class Makeup {
         this.name = "makeup";
         this.description = "Allows you to make a pick up pick, if you were skipped.";
         this.usage = ["m!makeup <league prefix> <pokemon>"];
+        this.category = "draft";
         this.invoke = async (ctx) => {
             var _a;
             if (!ctx.args[0])

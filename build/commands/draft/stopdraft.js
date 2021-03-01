@@ -15,13 +15,13 @@ class Stopdraft {
             user: ["MANAGE_GUILD"]
         };
         this.invoke = async (ctx) => {
-            DraftTimerSchema_1.default.findOne({ channelId: ctx.channelId }, (error, record) => {
+            DraftTimerSchema_1.default.findOne({ channelId: ctx.channelId }, async (error, record) => {
                 if (!record)
                     return ctx.sendMessage("There is no draft maded. Please set one up, by using the `setdraft` command.");
                 if (!ctx.client.drafts.has(record.prefix))
                     return ctx.sendMessage("That draft isn't running currently.");
                 const draft = new DraftSystem_1.DraftSystem(ctx);
-                ctx.client.drafts.delete(record.prefix);
+                await draft.stop(record);
                 ctx.sendMessage("Stopped draft. you can pick off where you last left off.");
             });
         };

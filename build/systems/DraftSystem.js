@@ -9,16 +9,25 @@ const dex_1 = require("@pkmn/dex");
 const discord_js_1 = require("discord.js");
 const moment_1 = __importDefault(require("moment"));
 const GoogleSheets_1 = require("../modules/GoogleSheets");
-const Timer = require("i-event-timer");
+const smart_timeout_1 = __importDefault(require("smart-timeout"));
 class DraftSystem {
     constructor(_ctx) {
         this._ctx = _ctx;
-        this.timer = new Timer();
+        this._stop = false;
     }
     async start(record) {
         let ctx = this._ctx;
         ctx.sendMessage(`Draft Timer has been turned on!`);
         await this.askForPick(record);
+        smart_timeout_1.default.create(record.leagueName, async () => {
+            await this.skip(record);
+        }, record.timer);
+    }
+    async setTimer(record, time) {
+        smart_timeout_1.default.clear(record.leagueName, true);
+        smart_timeout_1.default.create(record.leagueName, async () => {
+            await this.skip(record);
+        }, time);
     }
     isPlayersTurn(record, userId) {
         return userId === record.currentPlayer;
@@ -46,17 +55,36 @@ class DraftSystem {
         record.pokemon.push(name.name);
         player === null || player === void 0 ? void 0 : player.pokemon.push(name.name);
         player.skips--;
+        if (record.sheetId !== undefined && record.sheetId !== "none") {
+            await this.sendToSheet(record.sheetId, [[(await this._ctx.client.users.fetch(userId)).username, name.name]]);
+            console.log("Set to sheets");
+        }
         record.save().catch(error => console.error(error));
         ctx.sendMessage(embed);
+    }
+    async getTimeRemaining(record, ctx) {
+        return await new Promise(async (resolve) => {
+            let embed = new discord_js_1.MessageEmbed();
+            embed.setTitle("Time Remaining.");
+            let time = moment_1.default(smart_timeout_1.default.remaining(record.leagueName));
+            let str = `<@${record.currentPlayer}> has ${(time.minutes() >= 60 ? `${time.hours()} hours` : time.minutes() > 0 ? `${time.minutes()} minutes` : `${time.seconds()} seconds`)} left`;
+            embed.setDescription(str);
+            embed.setColor("RANDOM");
+            ctx.sendMessage(embed);
+        });
     }
     async askForPick(record) {
         return await new Promise(async (resolve) => {
             var _a;
             let who = (_a = this.getCurrentPlayer(record)) === null || _a === void 0 ? void 0 : _a.userId;
-            (await this._ctx.client.users.fetch(who)).createDM().then(dm => {
+            let player = record.players.find(x => x.userId === record.currentPlayer);
+            if (player.skips >= record.totalSkips)
+                return await this.next(record);
+            (await this._ctx.client.users.fetch(who)).createDM().then(async (dm) => {
                 var _a;
-                let player = record.players.find(x => x.userId === record.currentPlayer);
                 let time = moment_1.default(player.skips === 0 ? record.timer : Math.floor(Math.round(record.timer / (2 * player.skips))));
+                console.debug(time.milliseconds());
+                await this.setTimer(record, player.skips === 0 ? record.timer : Math.floor(Math.round(record.timer / (2 * player.skips))));
                 let pickEmbed = new discord_js_1.MessageEmbed()
                     .setTitle(`Its your pick in ${(_a = this._ctx.guild) === null || _a === void 0 ? void 0 : _a.name}`)
                     .setDescription(`Your league's prefix is ${record.prefix}. To draft a pokemon type in \`m!pick ${record.prefix} <pokemon name>\` example: \`m!pick ${record.prefix} lopunny\``)
@@ -69,14 +97,6 @@ class DraftSystem {
                     .addField("Timer:", `${record.pause ? "Timer Is off" : (time.minutes() > 60 ? `${time.hours()} hours` : `${time.minutes()} minutes`)}`)
                     .setColor("RANDOM");
                 this._ctx.sendMessage(serverEmbed);
-                this.timer = new Timer(time.milliseconds(), [(time.milliseconds() / 2)]);
-                this.timer.startTimer();
-                this.timer.on("notify", (n) => {
-                    dm.send(`You have ${moment_1.default(n).minutes()} minutes left before you get skipped.`);
-                });
-                this.timer.on("end", () => {
-                    return this.skip(record);
-                });
             });
         });
     }
@@ -134,7 +154,6 @@ class DraftSystem {
         draftEmbed.setColor("RANDOM");
         console.log(record.sheetId);
         this._ctx.sendMessage(draftEmbed);
-        this.timer.stopTimer();
         if (record.sheetId !== undefined && record.sheetId !== "none") {
             await this.sendToSheet(record.sheetId, [[(await this._ctx.client.users.fetch(userId)).username, name.name]]);
             console.log("Set to sheets");
@@ -154,7 +173,6 @@ class DraftSystem {
     }
     async next(record) {
         var _a, _b;
-        this.timer.resetTime();
         let player = record.players.find(x => x.userId === record.currentPlayer);
         if (record.direction === "down") {
             if ((player === null || player === void 0 ? void 0 : player.order) === record.players.length) {
@@ -223,6 +241,8 @@ class DraftSystem {
     }
     async stop(record) {
         this._ctx.sendMessage("Stopping Draft");
+        if (smart_timeout_1.default.exists(record.leagueName))
+            smart_timeout_1.default.clear(record.leagueName, true);
         this._ctx.client.drafts.delete(record.prefix);
     }
     async skip(record) {

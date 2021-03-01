@@ -10,7 +10,7 @@ export class Startdraft implements ICommand {
 	permissions: {user: PermissionString[]} = {
 		user: ["MANAGE_GUILD"]
 	};
-
+	category = "draft";
 	invoke = async (ctx: CommandContext) => {
 		return await new Promise((resolve) => {
 			DraftTimer.findOne({channelId: ctx.channelId}, (error: CallbackError, record: IDraftTimer) => {

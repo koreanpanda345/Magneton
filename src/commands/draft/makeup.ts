@@ -8,6 +8,7 @@ export class Makeup implements ICommand {
 	name = "makeup";
 	description = "Allows you to make a pick up pick, if you were skipped.";
 	usage = ["m!makeup <league prefix> <pokemon>"];
+	category = "draft";
 	invoke = async (ctx: CommandContext) => {
 		if(!ctx.args[0]) return ctx.sendMessage("Please execute the command again, but provided a league prefix.");
 		let prefix = ctx.args.shift()?.toLowerCase()!;

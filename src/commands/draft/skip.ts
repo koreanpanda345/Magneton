@@ -2,7 +2,7 @@ import { ICommand } from "../../types/commands";
 import { CommandContext } from "../../types/CommandContext";
 import DraftTimer, { IDraftTimer } from "../../database/DraftTimerSchema";
 import { CallbackError } from "mongoose";
-import { Dex } from '@pkmn/dex';
+
 import { PermissionString } from 'discord.js';
 
 export class Skip implements ICommand {
