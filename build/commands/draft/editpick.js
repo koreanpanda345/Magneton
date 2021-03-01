@@ -34,8 +34,6 @@ class Editpick {
                     return ctx.sendMessage("There is no draft running with that league prefix. Tell your Liaison to start the draft.");
                 if (!draft.isInDraft(record, player === null || player === void 0 ? void 0 : player.id))
                     return ctx.sendMessage("You are not in the draft. If you are picking for someone, then use `leftpick` command to pick for said person.");
-                if (!draft.isPlayersTurn(record, player === null || player === void 0 ? void 0 : player.id))
-                    return ctx.sendMessage("It is not your turn yet. please wait");
                 await draft.editPick(ctx, player === null || player === void 0 ? void 0 : player.id, prefix, oldPokemon, newPokemon);
             });
         };

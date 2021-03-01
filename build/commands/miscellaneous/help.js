@@ -21,7 +21,6 @@ class Help {
                     "Miscellaneous",
                     "Tools",
                     "Draft",
-                    // "Settings"
                 ];
                 categorys.forEach(cat => {
                     const cmds = ctx.client.commands.filter(cmd => { var _a; return ((_a = cmd.category) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === cat.toLowerCase(); });
