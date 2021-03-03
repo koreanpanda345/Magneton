@@ -1,7 +1,5 @@
 import { ICommand } from "../../types/commands";
 import { CommandContext } from "../../types/CommandContext";
-import { Sets, PokemonSet } from "@pkmn/sets";
-import { Dex } from "@pkmn/dex";
 import fetch from "node-fetch";
 import { MessageEmbed } from "discord.js";
 
@@ -85,7 +83,7 @@ export class SetCommand implements ICommand {
 				embed.setFooter("Set(s) are from smogon.com");
 
 				ctx.sendMessage(embed);
-			}).catch(error => {
+			}).catch(() => {
 				let embed = new MessageEmbed();
 				embed.setTitle(`Couldn't find a set for ${name} in Gen ${gen} ${format}`);
 				embed.setColor("RED");

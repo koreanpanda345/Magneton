@@ -1,6 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommandContext = void 0;
+/**
+ * The CommandContext class's purpose is to make it easier passing
+ * variables through, as one type. It also is to make short cuts for
+ * necessary things.
+ */
 class CommandContext {
     constructor(_message, _args, _client) {
         var _a, _b;
@@ -16,6 +21,10 @@ class CommandContext {
         this._member = this._message.member;
         this._me = (_b = this._guild) === null || _b === void 0 ? void 0 : _b.me;
     }
+    /**
+     * Short cut for sending message.
+     * @param content - Content that we want to send to the channel.
+     */
     sendMessage(content) {
         return this.channel.send(content);
     }

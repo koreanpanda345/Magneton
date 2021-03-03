@@ -1,7 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Message = void 0;
 const CommandContext_1 = require("../../types/CommandContext");
+const discord_js_1 = require("discord.js");
+const SettingsSchema_1 = __importDefault(require("../../database/SettingsSchema"));
 class Message {
     constructor(_client) {
         this._client = _client;
@@ -10,7 +15,13 @@ class Message {
             var _a, _b, _c, _d, _e, _f;
             if (message.author.bot)
                 return;
-            let prefix = process.env.PREFIX;
+            let prefix = (message.channel.type !== "dm") ? await this.getPrefix(message.guild.id) : process.env.PREFIX;
+            if (message.mentions.users.has(message.client.user.id)) {
+                let embed = new discord_js_1.MessageEmbed();
+                embed.setDescription(`My prefix is ${prefix}`);
+                embed.setColor("RANDOM");
+                message.channel.send(embed);
+            }
             if (message.content.toLowerCase().startsWith(prefix)) {
                 const args = message.content.slice(prefix.length).trim().split(/ +/g);
                 const commandName = (_a = args.shift()) === null || _a === void 0 ? void 0 : _a.toLowerCase();
@@ -65,6 +76,21 @@ class Message {
                 }
             }
         };
+    }
+    async getPrefix(serverId) {
+        return await new Promise((resolve) => {
+            SettingsSchema_1.default.findOne({ serverId }, (error, record) => {
+                if (!record) {
+                    const newConfig = new SettingsSchema_1.default({
+                        serverId,
+                        prefix: "m!"
+                    });
+                    newConfig.save().catch(error => console.error(error));
+                    return resolve(newConfig.prefix);
+                }
+                return resolve(record.prefix);
+            });
+        });
     }
 }
 exports.Message = Message;

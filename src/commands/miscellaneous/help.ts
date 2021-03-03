@@ -21,7 +21,7 @@ export class Help implements ICommand {
 				"Miscellaneous",
 				"Tools",
 				"Draft",
-				// "Settings"
+				"Settings"
 			];
 
 			categorys.forEach(cat => {

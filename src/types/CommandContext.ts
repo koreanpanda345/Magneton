@@ -1,8 +1,14 @@
 import { Guild, Channel, User, GuildMember, Message, TextChannel } from "discord.js";
 import { Magneton } from "../Magneton";
 
-
+/**
+ * The CommandContext class's purpose is to make it easier passing
+ * variables through, as one type. It also is to make short cuts for 
+ * necessary things.
+ */
 export class CommandContext {
+	// We make variables private, so we change their read/write permission to be read only.
+	// This is done by using the get keyword starting at line 39.
 	private _guild: Guild | null;
 	private _guildId: string | undefined;
 	private _channel: Channel;
@@ -25,7 +31,10 @@ export class CommandContext {
 		this._member = this._message.member;
 		this._me = this._guild?.me;
 	}
-
+	/**
+	 * Short cut for sending message.
+	 * @param content - Content that we want to send to the channel.
+	 */
 	public sendMessage(content: any) {
 		return (this.channel as TextChannel).send(content);
 	}

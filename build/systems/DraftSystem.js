@@ -13,7 +13,6 @@ const smart_timeout_1 = __importDefault(require("smart-timeout"));
 class DraftSystem {
     constructor(_ctx) {
         this._ctx = _ctx;
-        this._stop = false;
     }
     async start(record) {
         let ctx = this._ctx;
@@ -32,7 +31,7 @@ class DraftSystem {
     isPlayersTurn(record, userId) {
         return userId === record.currentPlayer;
     }
-    async makeupPick(ctx, userId, prefix, pokemon, text) {
+    async makeupPick(ctx, userId, prefix, pokemon) {
         let record = await this.whichLeague(prefix);
         let player = this.getCurrentPlayer(record);
         if ((player === null || player === void 0 ? void 0 : player.skips) === 0)
@@ -63,7 +62,7 @@ class DraftSystem {
         ctx.sendMessage(embed);
     }
     async getTimeRemaining(record, ctx) {
-        return await new Promise(async (resolve) => {
+        return await new Promise(async () => {
             let embed = new discord_js_1.MessageEmbed();
             embed.setTitle("Time Remaining.");
             let time = moment_1.default(smart_timeout_1.default.remaining(record.leagueName));
@@ -74,7 +73,7 @@ class DraftSystem {
         });
     }
     async askForPick(record) {
-        return await new Promise(async (resolve) => {
+        return await new Promise(async () => {
             var _a;
             let who = (_a = this.getCurrentPlayer(record)) === null || _a === void 0 ? void 0 : _a.userId;
             let player = record.players.find(x => x.userId === record.currentPlayer);
@@ -131,7 +130,7 @@ class DraftSystem {
                     ]] });
             console.log("Updated Sheets");
         }
-        record.save().catch(error => console.error());
+        record.save().catch(() => console.error());
     }
     async makePick(ctx, userId, prefix, pokemon, text) {
         let record = await this.whichLeague(prefix);

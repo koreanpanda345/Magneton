@@ -3,16 +3,15 @@ import DraftTimer from "../database/DraftTimerSchema";
 import { IDraftTimer } from './../database/DraftTimerSchema';
 import { CallbackError } from "mongoose";
 import {Dex} from "@pkmn/dex";
-import { MessageEmbed, Message, MessageCollector, DMChannel } from "discord.js";
+import { MessageEmbed, MessageCollector } from "discord.js";
 import moment from "moment";
 import { GoogleSheets } from "../modules/GoogleSheets";
-import Timeout, { TimeoutInstance } from 'smart-timeout';
+import Timeout from 'smart-timeout';
 export class DraftSystem {
 	constructor(
 		private _ctx: CommandContext
 	){
 	}
-	private _stop: boolean = false;
 	public async start(record: IDraftTimer) {
 		let ctx = this._ctx;
 		ctx.sendMessage(`Draft Timer has been turned on!`);
@@ -33,7 +32,7 @@ export class DraftSystem {
 		return userId === record.currentPlayer;
 	}
 
-	public async makeupPick(ctx: CommandContext, userId: string, prefix: string, pokemon: string, text?: string) {
+	public async makeupPick(ctx: CommandContext, userId: string, prefix: string, pokemon: string) {
 		let record = await this.whichLeague(prefix) as IDraftTimer;
 		let player = this.getCurrentPlayer(record);
 		if(player?.skips === 0) return ctx.sendMessage("You don't have any makeup picks.");
@@ -67,7 +66,7 @@ export class DraftSystem {
 	}
 
 	public async getTimeRemaining(record: IDraftTimer, ctx: CommandContext) {
-		return await new Promise(async (resolve) => {
+		return await new Promise(async () => {
 			let embed = new MessageEmbed();
 			embed.setTitle("Time Remaining.");
 			let time = moment(Timeout.remaining(record.leagueName));
@@ -80,7 +79,7 @@ export class DraftSystem {
 	}
 
 	public async askForPick(record: IDraftTimer): Promise<MessageCollector> {
-		return await new Promise(async (resolve) => {
+		return await new Promise(async () => {
 
 			let who = this.getCurrentPlayer(record)?.userId;
 			let player = record.players.find(x => x.userId === record.currentPlayer)!;
@@ -135,7 +134,7 @@ export class DraftSystem {
 			]]});
 			console.log("Updated Sheets");
 		}
-		record.save().catch(error => console.error());
+		record.save().catch(() => console.error());
 	}
 
 	public async makePick(ctx: CommandContext, userId: string, prefix: string, pokemon: string, text: string) {

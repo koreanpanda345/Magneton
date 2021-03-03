@@ -14,7 +14,7 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
     __setModuleDefault(result, mod);
     return result;
 };
@@ -29,15 +29,30 @@ class Magneton extends discord_js_1.Client {
         this._events = new discord_js_1.Collection();
         this._drafts = new discord_js_1.Collection();
     }
+    /**
+     * Runs the bot.
+     * @param type - What stage are we in?
+     */
     start(type) {
         this.loadFiles(type);
         this.login(process.env.TOKEN);
     }
+    /**
+     * Loads the required files.
+     * @param type - What stage are we in?
+     */
     loadFiles(type) {
         this.loadCommands(type);
         this.loadEvents(type);
     }
+    /**
+     * Loads the commands.
+     * @param type - What stage are we in?
+     */
     loadCommands(type) {
+        // If we are in the development stage, then we are going to be using ts-node.
+        // which uses the files in the src folder. else we would be using node, and use
+        // the files in the build folder.
         const folder = type === "development" ? "./src/commands" : "./build/commands";
         const dirs = fs_1.readdirSync(`${folder}`);
         dirs.forEach(async (dir) => {
@@ -52,7 +67,14 @@ class Magneton extends discord_js_1.Client {
             }
         });
     }
+    /**
+     * Loads the events.
+     * @param type - What stage are we in?
+     */
     loadEvents(type) {
+        // If we are in the development stage, then we are going to be using ts-node.
+        // which uses the files in the src folder. else we would be using node, and use
+        // the files in the build folder.
         const folder = type === "development" ? "./src/events" : "./build/events";
         const dirs = fs_1.readdirSync(`${folder}`);
         dirs.forEach(async (dir) => {
@@ -67,8 +89,17 @@ class Magneton extends discord_js_1.Client {
             }
         });
     }
+    /**
+     * The collection of commands.
+     */
     get commands() { return this._commands; }
+    /**
+     * The collection of events.
+     */
     get events() { return this._events; }
+    /**
+     * The collection of executed draft timers.
+     */
     get drafts() { return this._drafts; }
 }
 exports.Magneton = Magneton;

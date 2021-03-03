@@ -64,7 +64,7 @@ class SetCommand {
                 embed.setColor("RANDOM");
                 embed.setFooter("Set(s) are from smogon.com");
                 ctx.sendMessage(embed);
-            }).catch(error => {
+            }).catch(() => {
                 let embed = new discord_js_1.MessageEmbed();
                 embed.setTitle(`Couldn't find a set for ${name} in Gen ${gen} ${format}`);
                 embed.setColor("RED");
