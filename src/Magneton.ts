@@ -3,17 +3,20 @@ import {readdirSync} from "fs";
 import { DraftSystem } from "./systems/DraftSystem";
 import { ICommand } from "./types/commands";
 import { IEvent } from "./types/events";
+import { TradeSystem } from "./systems/TradeSystem";
 export class Magneton extends Client {
 	// Variables are private so that i can reduce the chances of overriding these variables.
 	private readonly _commands: Collection<string, ICommand>;
 	private readonly _events: Collection<string, IEvent>;
 	private readonly _drafts: Collection<string, DraftSystem>;
+	private readonly _trades: Collection<number, TradeSystem>;
 
 	constructor() {
 		super();
 		this._commands = new Collection<string, ICommand>();
 		this._events = new Collection<string, IEvent>();
 		this._drafts = new Collection<string, DraftSystem>();
+		this._trades = new Collection<number, TradeSystem>();
 	}
 	/**
 	 * Runs the bot.
@@ -87,4 +90,8 @@ export class Magneton extends Client {
 	 * The collection of executed draft timers.
 	 */
 	public get drafts() { return this._drafts; }
+	/**
+	 * The collection executed trades.
+	 */
+	public get trades() { return this._trades; }
 }

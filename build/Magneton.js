@@ -28,6 +28,7 @@ class Magneton extends discord_js_1.Client {
         this._commands = new discord_js_1.Collection();
         this._events = new discord_js_1.Collection();
         this._drafts = new discord_js_1.Collection();
+        this._trades = new discord_js_1.Collection();
     }
     /**
      * Runs the bot.
@@ -101,5 +102,9 @@ class Magneton extends discord_js_1.Client {
      * The collection of executed draft timers.
      */
     get drafts() { return this._drafts; }
+    /**
+     * The collection executed trades.
+     */
+    get trades() { return this._trades; }
 }
 exports.Magneton = Magneton;
