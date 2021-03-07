@@ -2,6 +2,7 @@ import {botCache} from "../../cache.ts";
 
 botCache.arguments.set("string", {
 	name: "string",
+	//@ts-ignore
 	invoke: (argument, parameters) => {
 		const [text] = parameters;
 

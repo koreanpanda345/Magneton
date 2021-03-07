@@ -4,15 +4,17 @@ import {botCache} from "../../cache.ts";
 import { getTime } from "../utils/helpers.ts";
 import { Command } from "../types/commands.ts";
 import {handleError} from "../utils/errors.ts";
+import {ServerData} from "../types/databases.ts";
 
 
 //#region Parsers
 /** Parses the prefix for the guild. */
-export const parsePrefix = (guildId?: string) => {
+export const parsePrefix = async (guildId?: string): Promise<string> => {
 	// This will be change once we add the database.
-	const prefix = Deno.env.get("PREFIX");
+	let results = await botCache.databases.server.select<ServerData>({filterByFormula: `{Server Id} = '${guildId}'`});
+	const prefix = results.records.length !== 0 ? results.records[0].fields["Prefix"] :Deno.env.get("PREFIX");
 
-	return prefix || Deno.env.get("PREFIX");
+	return prefix || Deno.env.get("PREFIX") as string;
 };
 
 export const parseCommand = (commandName: string) => {
@@ -148,7 +150,7 @@ botCache.monitors.set("commandHandler", {
 	invoke: async (message: Message) => {
 		if(message.author.bot) return;
 
-		let prefix = parsePrefix(message.guildID);
+		let prefix = await parsePrefix(message.guildID);
 		const botMention = `<@${botID}>`;
 
 		if(message.content === botMention)

@@ -56,7 +56,7 @@ let paths: string[] = [];
  */
 export async function importDirectory(path: string) {
 	const files = Deno.readDirSync(Deno.realPathSync(path));
-	const folder = path.substring(path.indexOf("/src/") + 5);
+	const folder = path.substring(path.indexOf("/src/"));
 	
 	if(!folder.includes("/")) console.log(`Loading ${folder}...`);
 

@@ -2,7 +2,8 @@ import { Intents, startBot } from "discordeno";
 import "dotenv";
 import { fileLoader, importDirectory } from "./src/utils/helpers.ts";
 import { botCache } from "./cache.ts";
-import {Airtable} from "airtable";
+import {loadLanguages} from "./src/utils/i18next.ts";
+
 
 console.log("Starting up the bot");
 
@@ -18,18 +19,9 @@ await Promise.all(
 );
 // this will load the files.
 await fileLoader();
+// This will load the languages.
+await loadLanguages();
 
-export const draftTimer = new Airtable({
-	apiKey: Deno.env.get("AIRTABLE_API_KEY"),
-	baseId: Deno.env.get("AIRTABLE_BASE_ID"),
-	tableName: "Draft Timers"
-});
-
-export const serverSettings = new Airtable({
-	apiKey: Deno.env.get("AIRTABLE_API_KEY"),
-	baseId: Deno.env.get("AIRTABLE_BASE_ID"),
-	tableName: "Server Settings"
-});
 // Starts the bot.
 startBot({
 	token: Deno.env.get("TOKEN") as string,

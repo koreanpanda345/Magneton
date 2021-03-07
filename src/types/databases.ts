@@ -8,11 +8,14 @@ export type DraftData = {
 	"Pokemon": string;
 	"Current Player": string;
 	"Players": string;
+	"Server Id": string;
+	"Channel Id": string;
 };
 
 export type ServerData = {
 	"Server Id": string;
 	"Prefix": string;
+	"Language": string;
 };
 
 export interface Database {
