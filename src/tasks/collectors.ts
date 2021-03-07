@@ -9,7 +9,7 @@ botCache.tasks.set("collector", {
 
 		botCache.messageCollectors.forEach((collector, key) => {
 
-			if((collector.createAt + collector.duration) > now) return;
+			if((collector.createdAt + collector.duration) > now) return;
 
 			botCache.messageCollectors.delete(key);
 			return collector.reject();

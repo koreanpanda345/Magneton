@@ -1,0 +1,6 @@
+{
+	"include": ["src/**/*.ts", "cache.ts", "mod.ts", "fileloader.ts"],
+	"compilerOptions": {
+		
+	}
+}
