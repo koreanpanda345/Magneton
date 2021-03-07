@@ -4,8 +4,8 @@ import { Argument } from "./src/types/commands.ts";
 import { Monitor } from "./src/types/monitors.ts";
 import { Task } from "./src/types/tasks.ts";
 import {CustomEvent} from "./src/types/events.ts";
-import { Airtable } from "airtable";
 import {MessageCollector, ReactionCollector} from "./src/types/collectors.ts";
+import {Airtable} from "airtable";
 // This is the bot's caching.
 // everything that needs to be stored as an instance is setup here.
 export const botCache = {

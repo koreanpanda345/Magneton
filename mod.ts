@@ -22,6 +22,7 @@ await fileLoader();
 // This will load the languages.
 await loadLanguages();
 
+
 // Starts the bot.
 startBot({
 	token: Deno.env.get("TOKEN") as string,

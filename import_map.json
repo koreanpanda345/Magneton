@@ -3,6 +3,7 @@
 		"discordeno": "https://deno.land/x/discordeno@10.4.0/mod.ts",
 		"colors": "https://deno.land/x/std@0.88.0/fmt/colors.ts",
 		"dotenv": "https://deno.land/x/dotenv/load.ts",
+		"mongo": "https://deno.land/x/mongo@v0.21.2/mod.ts",
 		"airtable": "https://deno.land/x/airtable/mod.ts"
 	}
 }
