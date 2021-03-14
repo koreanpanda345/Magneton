@@ -174,8 +174,11 @@ export class DraftSystem {
 			const result = await this.checkQueue(record);
 			if (result) return;
 			const player = this.getCurrentPlayer(record);
-			if (record.modes.skips && player!.skips >= record.totalSkips)
-				return await this.next(record);
+			if (record.modes.skips && player!.skips >= record.totalSkips) {
+				record = (await this.next(record)) as IDraftTimer;
+				await this.askForPick(record);
+				return;
+			}
 			if (record.modes.dm) {
 				(await client.users?.fetch(player?.userId!))
 					.createDM()
@@ -446,7 +449,7 @@ export class DraftSystem {
 		pokemon: string
 	) {
 		const record = (await this.whichLeague(prefix)) as IDraftTimer;
-		const player = this.getCurrentPlayer(record);
+		const player = this.getPlayer(record, userId);
 		if (player?.skips === 0)
 			return ctx.sendMessage("You don't have any makeup picks.");
 		if (!record)
