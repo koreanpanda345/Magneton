@@ -9,6 +9,7 @@ createCommand({
 	aliases: ["time"],
 	description:
 		"Gets the remaining time that a player has before they are skipped.",
+	usages: ["m!gettime <league prefix>", ""],
 	invoke: async (ctx: CommandContext) => {
 		if (!ctx.args[0])
 			return ctx.sendMessage(

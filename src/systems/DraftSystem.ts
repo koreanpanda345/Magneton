@@ -109,7 +109,8 @@ export class DraftSystem {
 		Timeout.create(
 			record.leagueName,
 			async () => {
-				await this.skip(record);
+				record = await this.skip(record);
+				await this.askForPick(record);
 			},
 			record.timer
 		);
@@ -174,8 +175,13 @@ export class DraftSystem {
 			const result = await this.checkQueue(record);
 			if (result) return;
 			const player = this.getCurrentPlayer(record);
+			if (player?.done) {
+				record = (await this.skip(record)) as IDraftTimer;
+				await this.askForPick(record);
+				return;
+			}
 			if (record.modes.skips && player!.skips >= record.totalSkips) {
-				record = (await this.next(record)) as IDraftTimer;
+				record = (await this.skip(record)) as IDraftTimer;
 				await this.askForPick(record);
 				return;
 			}
@@ -261,24 +267,7 @@ export class DraftSystem {
 			`Skipped ${(await client.users.fetch(record.currentPlayer)).username}`
 		);
 		player!.skips++;
-		if (record.direction === "down") {
-			if (player?.order === record.players.length) {
-				record.direction = "up";
-				record.round++;
-			} else
-				record.currentPlayer = record.players.find(
-					(x) => x.order === player?.order! + 1
-				)?.userId!;
-		} else if (record.direction === "up") {
-			if (player?.order === 1) {
-				record.direction = "down";
-				record.round++;
-			} else
-				record.currentPlayer = record.players.find(
-					(x) => x.order === player?.order! - 1
-				)?.userId!;
-		}
-		record.save().catch((error) => console.error(error));
+		record = (await this.next(record)) as IDraftTimer;
 		return record;
 	}
 
@@ -301,7 +290,7 @@ export class DraftSystem {
 					(x) => x.order === player?.order! - 1
 				)?.userId!;
 		}
-		if (record.round >= record.maxRounds) {
+		if (record.round > record.maxRounds) {
 			const finishedEmbed = new MessageEmbed();
 			finishedEmbed.setTitle("Draft has concluded");
 			finishedEmbed.setDescription(

@@ -11,6 +11,7 @@ createCommand({
 	aliases: ["d"],
 	description:
 		"Displays all the players picks currently for a draft, by the league prefix.",
+	usages: ["m!draft <league prefix>", "m!d <league prefix>"],
 	invoke: async (ctx: CommandContext) => {
 		const prefix = ctx.args.join(" ").trim();
 		DraftTimer.findOne(

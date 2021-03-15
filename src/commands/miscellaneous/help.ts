@@ -48,6 +48,8 @@ createCommand({
 				`${command.aliases ? `Aliases: ${command.aliases.join(",")}\n` : ""}` +
 					`Description: ${
 						command.description || "No Description was provided."
+					}\nUsages:\n${
+						command.usages?.join("\n") || "No Usages were provided"
 					}`
 			);
 		}

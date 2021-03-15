@@ -12,6 +12,7 @@ export interface IDraftTimer extends Document {
 		pokemon: string[];
 		order: number;
 		queue: string[];
+		done: boolean;
 	}[];
 	maxRounds: number;
 	totalSkips: number;
@@ -41,6 +42,7 @@ const draftTimerSchema = new Schema({
 			pokemon: [String],
 			order: Number,
 			queue: [String],
+			done: Boolean,
 		},
 	],
 	round: Number,

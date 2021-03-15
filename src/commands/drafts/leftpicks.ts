@@ -6,7 +6,12 @@ import { client } from "../..";
 
 createCommand({
 	name: "leftpicks",
+	description: "Allows you to pick for someone, when it is their turn.",
 	aliases: ["lp"],
+	usages: [
+		"m!leftpicks <league prefix> <@who> <pokemon>",
+		"m!lp <league prefix> <@who> <pokemon>",
+	],
 	invoke: async (ctx: CommandContext) => {
 		if (!ctx.args[0])
 			return ctx.sendMessage(

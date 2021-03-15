@@ -13,6 +13,7 @@ createCommand({
 	permissions: {
 		user: ["MANAGE_GUILD"],
 	},
+	usages: ["m!startdraft", "m!start"],
 	invoke: async (ctx: CommandContext) => {
 		return await new Promise((resolve) => {
 			DraftTimer.findOne(

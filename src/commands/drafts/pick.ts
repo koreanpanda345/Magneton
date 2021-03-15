@@ -8,6 +8,7 @@ createCommand({
 	name: "pick",
 	description:
 		"Allows you to pick a pokemon for your draft when it is your turn.",
+	usages: ["m!pick <league prefix> <pokemon>"],
 	invoke: async (ctx: CommandContext) => {
 		if (!ctx.args[0])
 			return ctx.sendMessage(

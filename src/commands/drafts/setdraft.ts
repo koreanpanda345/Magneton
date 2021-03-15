@@ -13,7 +13,7 @@ createCommand({
 		user: ["MANAGE_GUILD"],
 	},
 	description: "Sets up the draft.",
-
+	usages: ["m!setdraft", "m!set"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
 			{ channelId: ctx.channelId },
@@ -288,6 +288,7 @@ async function setup(
 											order: data.players.length + 1,
 											skips: 0,
 											queue: [],
+											done: false,
 										});
 										embed.addField(
 											`Player __**${member.username}**__`,
@@ -307,7 +308,7 @@ async function setup(
 			embedMessage.edit(embed).then(async (msg) => {
 				DraftTimer.create({
 					leagueName: data["leagueName"],
-					prefix: data["prefix"],
+					prefix: data["prefix"].toLowerCase(),
 					maxRounds: data["maxRounds"],
 					totalSkips: data["totalSkips"],
 					pokemon: [],

@@ -8,6 +8,8 @@ import { client } from "../..";
 createCommand({
 	name: "deletedraft",
 	aliases: ["delete"],
+	description:
+		"Deletes the current draft. Use this command in the draft channel.",
 	permissions: {
 		user: ["MANAGE_GUILD"],
 	},

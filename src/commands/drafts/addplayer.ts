@@ -10,6 +10,7 @@ createCommand({
 	aliases: ["add"],
 	description:
 		"Adds a player to the draft. Use this in the channel that you set up the draft in.",
+	usages: ["m!addplayer <@who>", "m!add <@who>"],
 	permissions: {
 		user: ["MANAGE_GUILD"],
 	},
@@ -36,6 +37,7 @@ createCommand({
 						order: data.players.length + 1,
 						skips: 0,
 						queue: [] as string[],
+						done: false,
 					});
 
 					return data;

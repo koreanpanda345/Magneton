@@ -10,6 +10,10 @@ createCommand({
 	aliases: ["q"],
 	description:
 		"Allows you to add, remove a pokemon from your queue, or view what is in your queue",
+	usages: [
+		"m!queue <league prefix> (add/remove) (pokemon)",
+		"m!q <league prefix> (add/remove) (pokemon)",
+	],
 	invoke: async (ctx: CommandContext) => {
 		if (!ctx.args.length) {
 			return ctx.sendMessage("Please try again, but provide league prefix");

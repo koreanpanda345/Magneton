@@ -9,6 +9,10 @@ createCommand({
 	name: "makeup",
 	description: "Allows you to make up a pick, if you were skipped.",
 	aliases: ["mu"],
+	usages: [
+		"m!makeup <league prefix> <pokemon>",
+		"m!mu <league prefix> <pokemon>",
+	],
 	invoke: async (ctx: CommandContext) => {
 		if (!ctx.args[0])
 			return ctx.sendMessage(

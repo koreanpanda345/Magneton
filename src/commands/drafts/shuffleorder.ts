@@ -10,7 +10,7 @@ createCommand({
 	aliases: ["shuffle"],
 	description:
 		"Randomizes the Draft order. use this in the channel that you set up the draft in.",
-
+	usages: ["m!shuffleorder", "m!shuffle"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
 			{ channelId: ctx.channelId },

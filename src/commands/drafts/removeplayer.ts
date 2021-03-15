@@ -11,6 +11,7 @@ createCommand({
 	permissions: {
 		user: ["MANAGE_GUILD"],
 	},
+	usages: ["m!removeplayer <@who>", "m!remove <@who>"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
 			{ channelId: ctx.channelId },

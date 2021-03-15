@@ -13,6 +13,7 @@ createCommand({
 	permissions: {
 		user: ["MANAGE_GUILD"],
 	},
+	usages: ["m!stopdraft", "m!stop"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
 			{ channelId: ctx.channelId },

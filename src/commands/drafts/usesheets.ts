@@ -6,6 +6,7 @@ import { CallbackError } from "mongoose";
 createCommand({
 	name: "usesheets",
 	description: "Enables the automation for you draft docs.",
+	usages: ["m!usesheets <sheet url>"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
 			{ channelId: ctx.channelId },
