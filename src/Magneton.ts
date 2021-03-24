@@ -4,12 +4,14 @@ import { Monitor } from "./types/monitors";
 import { Events } from "./types/events";
 import { readdirSync } from "fs";
 import { DraftSystem } from "./systems/DraftSystem";
+import { TradeSystem } from "./systems/TradeSystem";
 export class Magneton extends Client {
 	private _cache: {
 		commands: Collection<string, Command>;
 		events: Collection<string, Events>;
 		drafts: Collection<string, DraftSystem>;
 		monitors: Collection<string, Monitor>;
+		trades: Collection<number, TradeSystem>;
 	};
 	private _state: "Development" | "Production" = "Development";
 	private _status: PresenceStatusData;
@@ -19,8 +21,9 @@ export class Magneton extends Client {
 		this._cache = {
 			commands: new Collection<string, Command>(),
 			events: new Collection<string, Events>(),
-			drafts: new Collection<string, any>(),
+			drafts: new Collection<string, DraftSystem>(),
 			monitors: new Collection<string, Monitor>(),
+			trades: new Collection<number, TradeSystem>(),
 		};
 		this._status = "online";
 	}

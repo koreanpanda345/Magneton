@@ -37,7 +37,7 @@ export class DraftSystem {
 		return record.players.find((x) => x.userId === record.currentPlayer);
 	}
 
-	private isPokemonTaken(record: IDraftTimer, pokemon: string) {
+	public isPokemonTaken(record: IDraftTimer, pokemon: string) {
 		const found = record.pokemon.find(
 			(x) => x.toLowerCase() === pokemon.toLowerCase()
 		);
@@ -56,7 +56,7 @@ export class DraftSystem {
 		};
 	}
 
-	private static doesPokemonExist(pokemon: string) {
+	public doesPokemonExist(pokemon: string) {
 		return Dex.getSpecies(pokemon).exists;
 	}
 
@@ -333,7 +333,7 @@ export class DraftSystem {
 			return ctx.sendMessage(
 				"There doesn't seem like there is a league with the prefix"
 			);
-		if (!DraftSystem.doesPokemonExist(newPokemon))
+		if (!this.doesPokemonExist(newPokemon))
 			return ctx.sendMessage("That is a not a valid pokemon");
 		if (this.isPokemonTaken(record, newPokemon)!.taken) {
 			const result = this.isPokemonTaken(record, newPokemon);
@@ -394,7 +394,7 @@ export class DraftSystem {
 			return await ctx.sendMessage(
 				"There doesn't seem like there is a league with the prefix"
 			);
-		if (!DraftSystem.doesPokemonExist(pokemon))
+		if (!this.doesPokemonExist(pokemon))
 			return await ctx.sendMessage("That is a not a valid pokemon");
 		if (this.isPokemonTaken(record, pokemon)!.taken) {
 			const result = this.isPokemonTaken(record, pokemon);
@@ -445,7 +445,7 @@ export class DraftSystem {
 			return ctx.sendMessage(
 				"There doesn't seem like there is a league with that prefix"
 			);
-		if (!DraftSystem.doesPokemonExist(pokemon))
+		if (!this.doesPokemonExist(pokemon))
 			return ctx.sendMessage("That is not a valid pokemon.");
 		if (this.isPokemonTaken(record, pokemon).taken) {
 			const result = this.isPokemonTaken(record, pokemon);

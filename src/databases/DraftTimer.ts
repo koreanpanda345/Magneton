@@ -29,6 +29,10 @@ export interface IDraftTimer extends Document {
 		skips: boolean;
 		text: boolean;
 	};
+	tiers: {
+		tier: number;
+		pokemon: string[];
+	}[];
 }
 
 const draftTimerSchema = new Schema({
@@ -60,6 +64,12 @@ const draftTimerSchema = new Schema({
 		skips: Boolean,
 		text: Boolean,
 	},
+	tiers: [
+		{
+			tier: Number,
+			pokemon: [String],
+		},
+	],
 });
 
 export default mongoose.model<IDraftTimer>("DraftTimer", draftTimerSchema);

@@ -1,5 +1,4 @@
-import { google } from "googleapis";
-
+import { google, Auth } from "googleapis";
 export class GoogleSheets {
 	async connect() {
 		const client = new google.auth.JWT(
