@@ -100,6 +100,18 @@ export class TradeSystem {
 		});
 	}
 
+	public async decline(ctx: CommandContext) {
+		this._data.embed = new MessageEmbed();
+		this._data.embed.setTitle("Trade was canceled.");
+		this._data.embed.setDescription(`${ctx.user.username} declined the trade.`);
+		this._data.embed.setColor("RED");
+
+		this._data.message?.edit(this._data.embed).then((msg) => {
+			msg.delete({ timeout: 30000 });
+			client.cache.trades.delete(this._data.id);
+		});
+	}
+
 	public async accept(userId: string, ctx: CommandContext) {
 		this._data.players.forEach((player) => {
 			if (player.offer === "")

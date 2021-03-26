@@ -1,4 +1,4 @@
-import { Message, PermissionString } from "discord.js";
+import { Message, MessageEmbed, PermissionString } from "discord.js";
 import { client, logger } from "..";
 import { CommandContext, Command } from "../types/commands";
 import { createMonitors } from "../utils/helpers";
@@ -17,26 +17,31 @@ export function parseCommand(message: Message, args: string[]) {
 		);
 	if (!command) return false;
 	let run = true;
-	command.permissions?.user?.forEach((permission: PermissionString) => {
-		if (!message.member?.hasPermission(permission)) {
-			run = false;
-			return message.reply(
-				`You don't have permission to use this command. You must have the permission of ${permission}`
-			);
-		}
-		run = true;
-	});
+	if (message.channel.type !== "dm") {
+		command.permissions?.user?.forEach((permission: PermissionString) => {
+			if (!message.member?.hasPermission(permission)) {
+				run = false;
+				return message.reply(
+					`You don't have permission to use this command. You must have the permission of ${permission}`
+				);
+			}
+			run = true;
+		});
+	}
 
 	if (!run) return false;
-	command.permissions?.self?.forEach((permission: PermissionString) => {
-		if (!message.guild?.me?.hasPermission(permission)) {
-			run = false;
-			return message.reply(
-				`I don't have permission to do this. I must have the permission of ${permission}`
-			);
-		}
-		run = true;
-	});
+
+	if (message.channel.type !== "dm") {
+		command.permissions?.self?.forEach((permission: PermissionString) => {
+			if (!message.guild?.me?.hasPermission(permission)) {
+				run = false;
+				return message.reply(
+					`I don't have permission to do this. I must have the permission of ${permission}`
+				);
+			}
+			run = true;
+		});
+	}
 
 	if (!run) return false;
 	const ctx = new CommandContext(message, args);
@@ -78,6 +83,15 @@ createMonitors({
 		const args = message.content.slice(prefix.length).split(/ +/g);
 		const command = parseCommand(message, args);
 		if (!command) return;
-		await executeCommand(message, args, command);
+		try {
+			await executeCommand(message, args, command);
+		} catch (error) {
+			const embed = new MessageEmbed();
+			embed.setTitle("There was an error when executing that command.");
+			embed.setDescription(error);
+			embed.setColor("RED");
+
+			message.channel.send(embed);
+		}
 	},
 });
