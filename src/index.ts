@@ -14,7 +14,7 @@ mongoose.connect(process.env.MONGOOSE_CONNECTION_URL as string, {
 });
 
 const init = async () => {
-	//client.changeState("Production");
+	client.changeState("Production");
 	await client.loadFiles();
 	await client.runEvents();
 	client.login(process.env.TOKEN as string);
