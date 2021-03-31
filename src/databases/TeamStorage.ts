@@ -1,5 +1,5 @@
 import mongoose, { Document } from "mongoose";
-import { PokemonSet, Sets } from "@pkmn/sets";
+
 const Schema = mongoose.Schema;
 
 export interface ITeamStorage extends Document {

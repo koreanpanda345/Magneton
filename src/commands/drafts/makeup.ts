@@ -1,9 +1,10 @@
+import { CallbackError } from "mongoose";
+
+import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
-import { CallbackError } from "mongoose";
-import { client } from "../..";
 
 createCommand({
 	name: "makeup",

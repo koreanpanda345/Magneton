@@ -1,9 +1,10 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
-import { DraftSystem } from "../../systems/DraftSystem";
+
 import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { DraftSystem } from "../../systems/DraftSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "deletedraft",
@@ -15,7 +16,7 @@ createCommand({
 	},
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			(error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
@@ -24,7 +25,7 @@ createCommand({
 				if (client.cache.drafts.has(record.prefix))
 					return ctx.sendMessage("Please stop the draft before deleting");
 				const draft = new DraftSystem(ctx);
-				draft.destroy(record.prefix, record.channelId);
+				draft.destroy(record.prefix, record.channel_id);
 				client.cache.drafts.delete(record.prefix);
 				ctx.sendMessage("Deleted Draft");
 			}

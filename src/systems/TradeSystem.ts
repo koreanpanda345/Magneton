@@ -1,10 +1,13 @@
-import { DraftSystem } from "./DraftSystem";
-import { CommandContext } from "../types/commands";
-import { Dex } from "@pkmn/dex";
-import { MessageEmbed, Message } from "discord.js";
-import { client, logger } from "..";
-import DraftTimer, { IDraftTimer } from "../databases/DraftTimer";
+import { Message, MessageEmbed } from "discord.js";
 import { CallbackError } from "mongoose";
+
+import { Dex } from "@pkmn/dex";
+
+import { client, logger } from "../";
+import DraftTimer, { IDraftTimer } from "../databases/DraftTimer";
+import { CommandContext } from "../types/commands";
+import { DraftSystem } from "./DraftSystem";
+
 export class TradeSystem {
 	private _data: {
 		id: number;
@@ -75,7 +78,7 @@ export class TradeSystem {
 				"There doesn't seem to be any draft with that prefix."
 			);
 		const _player = (record as IDraftTimer).players?.find(
-			(x) => x.userId === player
+			(x) => x.user_id === player
 		);
 		const _pokemon = Dex.getSpecies(pokemon);
 		if (!_player?.pokemon.includes(_pokemon.name))
@@ -127,10 +130,10 @@ export class TradeSystem {
 		// If both players accepted the trade.
 		if (accepted[0] === true && accepted[1] === true) {
 			const player1 = (record as IDraftTimer).players?.find(
-				(x) => x.userId === this._players[0]
+				(x) => x.user_id === this._players[0]
 			);
 			const player2 = (record as IDraftTimer).players?.find(
-				(x) => x.userId === this._players[1]
+				(x) => x.user_id === this._players[1]
 			);
 
 			player1!.pokemon[

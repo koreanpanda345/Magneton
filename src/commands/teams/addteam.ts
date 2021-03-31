@@ -1,8 +1,10 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import { TeamStorageSystem } from "../../systems/TeamStorageSystem";
-import { PokemonSet, Sets } from "@pkmn/sets";
 import { MessageEmbed } from "discord.js";
+
+import { PokemonSet, Sets } from "@pkmn/sets";
+
+import { TeamStorageSystem } from "../../systems/TeamStorageSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "addteam",

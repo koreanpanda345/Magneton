@@ -1,10 +1,11 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
-import { CallbackError } from "mongoose";
 import { MessageEmbed } from "discord.js";
 import moment from "moment";
+import { CallbackError } from "mongoose";
+
 import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "draft",
@@ -22,7 +23,7 @@ createCommand({
 						"There doesn't seem like there is a draft under that prefix."
 					);
 				const embed = new MessageEmbed();
-				embed.setTitle(`Draft: ${record.leagueName}`);
+				embed.setTitle(`Draft: ${record.league_name}`);
 				const time = moment(record.timer);
 				embed.setDescription(
 					`League Prefix: ${record.prefix}\nTimer: ${
@@ -31,9 +32,10 @@ createCommand({
 							: time.minutes() > 60
 							? `${time.hours()} hours`
 							: `${time.minutes()} minutes`
-					}\nTotal Skips: ${record.totalSkips}\nOn pick ${
-						record.players.find((x) => x.userId === record.currentPlayer)?.order
-					} of ${record.round} / ${record.maxRounds} Rounds`
+					}\nTotal Skips: ${record.total_skips}\nOn pick ${
+						record.players.find((x) => x.user_id === record.current_player)
+							?.order
+					} of ${record.round} / ${record.max_rounds} Rounds`
 				);
 				embed.setColor("RANDOM");
 				for (const player of record.players) {
@@ -44,7 +46,7 @@ createCommand({
 						} - ${pokemon}\n`;
 					}
 					embed.addField(
-						`Player ${(await client.users.fetch(player.userId)).username}`,
+						`Player ${(await client.users.fetch(player.user_id)).username}`,
 						`Pokemon:\n${desc}`
 					);
 				}

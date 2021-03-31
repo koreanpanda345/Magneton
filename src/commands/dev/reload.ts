@@ -1,7 +1,8 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import { client, logger } from "../..";
 import { readdirSync } from "fs";
+
+import { client, logger } from "../..";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "reload",

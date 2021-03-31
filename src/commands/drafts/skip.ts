@@ -1,8 +1,9 @@
-import { createCommand } from "../../utils/helpers";
-import { client } from "../..";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
+
+import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "skip",
@@ -14,7 +15,7 @@ createCommand({
 	usages: ["m!skip"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			async (error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
@@ -25,9 +26,9 @@ createCommand({
 					return ctx.sendMessage(
 						"There is no draft running with that league prefix. Tell your Liaison to start the draft."
 					);
-				if (!draft.isInDraft(record, record.currentPlayer))
+				if (!draft.isInDraft(record, record.current_player))
 					return ctx.sendMessage("They are not in the draft.");
-				if (!draft.isPlayersTurn(record, record.currentPlayer))
+				if (!draft.isPlayersTurn(record, record.current_player))
 					return ctx.sendMessage("It is not their turn yet.");
 				const result = await draft.skip(record);
 				if (!result) return;

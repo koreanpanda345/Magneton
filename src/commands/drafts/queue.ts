@@ -1,9 +1,11 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
-import { CallbackError } from "mongoose";
-import { Dex } from "@pkmn/dex";
 import { MessageEmbed } from "discord.js";
+import { CallbackError } from "mongoose";
+
+import { Dex } from "@pkmn/dex";
+
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "queue",
@@ -28,7 +30,7 @@ createCommand({
 							return ctx.sendMessage(
 								"There doesn't seem to be a draft with that prefix."
 							);
-						const player = record.players.find((x) => x.userId === ctx.userId);
+						const player = record.players.find((x) => x.user_id === ctx.userId);
 						if (!player) return ctx.sendMessage("You are not in this draft.");
 						ctx.args.shift();
 						ctx.args.shift();
@@ -49,7 +51,7 @@ createCommand({
 							return ctx.sendMessage(
 								"There doesn't seem to be a draft with that prefix."
 							);
-						const player = record.players.find((x) => x.userId === ctx.userId);
+						const player = record.players.find((x) => x.user_id === ctx.userId);
 						if (!player) return ctx.sendMessage("You are not in this draft.");
 						ctx.args.shift();
 						ctx.args.shift();
@@ -75,9 +77,9 @@ createCommand({
 							return ctx.sendMessage(
 								"There doesn't seem to be a draft with that prefix."
 							);
-						const player = record.players.find((x) => x.userId === ctx.userId);
+						const player = record.players.find((x) => x.user_id === ctx.userId);
 						if (!player) return ctx.sendMessage("You are not in this draft.");
-						embed.setTitle(`Your queue for ${record.leagueName}`);
+						embed.setTitle(`Your queue for ${record.league_name}`);
 						embed.setDescription(
 							`To add a pokemon to queue, do \`m!q ${record.prefix} add <pokemon name>\`\n` +
 								`To remove a pokemon from queue, do \`m!q ${record.prefix} remove <pokemon name>\``

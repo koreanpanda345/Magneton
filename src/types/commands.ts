@@ -1,12 +1,12 @@
 import {
-	PermissionString,
-	Collection,
-	Message,
-	Guild,
 	Channel,
-	User,
+	Collection,
+	Guild,
 	GuildMember,
+	Message,
+	PermissionString,
 	TextChannel,
+	User,
 } from "discord.js";
 
 export interface Command {
@@ -21,7 +21,7 @@ export interface Command {
 	usages?: string[];
 	subcommands?: Collection<string, Command>;
 	preconditions?: ((ctx: CommandContext) => boolean)[];
-	invoke: (ctx: CommandContext) => Promise<unknown>;
+	invoke: (ctx: CommandContext, otherCommandData?: unknown) => Promise<unknown>;
 }
 
 export class CommandContext {

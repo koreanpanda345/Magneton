@@ -1,6 +1,7 @@
 import { Message, MessageEmbed, PermissionString } from "discord.js";
-import { client, logger } from "..";
-import { CommandContext, Command } from "../types/commands";
+
+import { client, logger } from "../";
+import { Command, CommandContext } from "../types/commands";
 import { createMonitors } from "../utils/helpers";
 
 export function parsePrefix(guildId: string | undefined): string {

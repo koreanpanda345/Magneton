@@ -1,9 +1,10 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
 import { MessageEmbed } from "discord.js";
 import { CallbackError } from "mongoose";
+
 import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "shuffleorder",
@@ -13,25 +14,25 @@ createCommand({
 	usages: ["m!shuffleorder", "m!shuffle"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			(err: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
 						`Please set up the draft, by using the \`setdraft\` command.`
 					);
 				const players: string[] = [];
-				record.players.forEach((x) => players.push(x.userId));
+				record.players.forEach((x) => players.push(x.user_id));
 				const shuffled = shuffle(players);
 
 				shuffled.forEach((id) => {
-					const player = record.players.find((x) => x.userId === id);
+					const player = record.players.find((x) => x.user_id === id);
 					if (player?.order !== null)
 						player!.order = shuffled.findIndex((x) => x === id) + 1;
 				});
 				// eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-				record.currentPlayer = record.players.find(
+				record.current_player = record.players.find(
 					(x) => x.order === 1
-				)?.userId!;
+				)?.user_id!;
 				const embed = new MessageEmbed()
 					.setTitle(`Randomized Order`)
 					.setDescription(`This is now the new draft order.`);
@@ -42,7 +43,7 @@ createCommand({
 					.sort((a, b) => a.order - b.order)
 					.forEach((x) =>
 						embed.addField(
-							`Player ${ctx.guild?.member(x.userId)?.user.username}`,
+							`Player ${ctx.guild?.member(x.user_id)?.user.username}`,
 							`Draft Order: ${x.order}`
 						)
 					);

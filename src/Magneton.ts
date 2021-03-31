@@ -1,10 +1,12 @@
 import { Client, Collection, PresenceStatusData } from "discord.js";
-import { Command } from "./types/commands";
-import { Monitor } from "./types/monitors";
-import { Events } from "./types/events";
 import { readdirSync } from "fs";
+
 import { DraftSystem } from "./systems/DraftSystem";
 import { TradeSystem } from "./systems/TradeSystem";
+import { Command } from "./types/commands";
+import { Events } from "./types/events";
+import { Monitor } from "./types/monitors";
+
 export class Magneton extends Client {
 	private _cache: {
 		commands: Collection<string, Command>;

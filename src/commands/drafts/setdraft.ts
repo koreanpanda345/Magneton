@@ -1,10 +1,10 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext, Command } from "../../types/commands";
-import { TextChannel, Message, MessageEmbed } from "discord.js";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { Message, MessageEmbed } from "discord.js";
 import { CallbackError } from "mongoose";
+
 import { client, logger } from "../..";
-import moment from "moment";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "setdraft",
@@ -14,9 +14,11 @@ createCommand({
 	},
 	description: "Sets up the draft.",
 	usages: ["m!setdraft", "m!set"],
-	invoke: async (ctx: CommandContext) => {
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	//@ts-ignore
+	invoke: async (ctx: CommandContext, _data: { from: string }) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			async (error: CallbackError, record: IDraftTimer) => {
 				if (!record) {
 					const data: {
@@ -30,7 +32,7 @@ createCommand({
 					embed.setTitle("Setting up draft...");
 
 					const embedMsg = await ctx.sendMessage(embed);
-					return await setup(ctx, data, 0, embed, embedMsg);
+					return await setup(ctx, data, 0, embed, embedMsg, _data);
 				} else {
 					return ctx.sendMessage("There is already a draft made.");
 				}
@@ -44,12 +46,13 @@ async function setup(
 	data: { [key: string]: any },
 	step: number,
 	embed: MessageEmbed,
-	embedMessage: Message
+	embedMessage: Message,
+	_data: { from: string }
 ) {
 	switch (step) {
 		case 0:
 			step = 1;
-			await setup(ctx, data, step, embed, embedMessage);
+			await setup(ctx, data, step, embed, embedMessage, _data);
 			break;
 		case 1:
 			embed.setTitle("League Setup");
@@ -82,7 +85,14 @@ async function setup(
 									] = collected.first()?.content.trim() as string;
 									step = 2;
 									console.log("Set Name");
-									return await setup(ctx, data, step, embed, embedMessage);
+									return await setup(
+										ctx,
+										data,
+										step,
+										embed,
+										embedMessage,
+										_data
+									);
 								}
 							);
 						});
@@ -123,7 +133,14 @@ async function setup(
 												"prefix"
 											] = collected.first()?.content.trim() as string;
 											step = 3;
-											return await setup(ctx, data, step, embed, embedMessage);
+											return await setup(
+												ctx,
+												data,
+												step,
+												embed,
+												embedMessage,
+												_data
+											);
 										}
 									}
 								);
@@ -160,7 +177,14 @@ async function setup(
 								} else {
 									data["maxRounds"] = rounds;
 									step = 4;
-									return await setup(ctx, data, step, embed, embedMessage);
+									return await setup(
+										ctx,
+										data,
+										step,
+										embed,
+										embedMessage,
+										_data
+									);
 								}
 							}
 						});
@@ -196,7 +220,14 @@ async function setup(
 								} else {
 									data["totalSkips"] = skips;
 									step = 5;
-									return await setup(ctx, data, step, embed, embedMessage);
+									return await setup(
+										ctx,
+										data,
+										step,
+										embed,
+										embedMessage,
+										_data
+									);
 								}
 							}
 						});
@@ -238,7 +269,7 @@ async function setup(
 								}
 
 								step = 6;
-								return await setup(ctx, data, step, embed, embedMessage);
+								return await setup(ctx, data, step, embed, embedMessage, _data);
 							}
 						});
 				};
@@ -276,19 +307,27 @@ async function setup(
 									collected.first()?.content.toLowerCase().trim() === "save"
 								) {
 									step = 7;
-									return await setup(ctx, data, step, embed, embedMessage);
+									return await setup(
+										ctx,
+										data,
+										step,
+										embed,
+										embedMessage,
+										_data
+									);
 								} else if (collected.first()?.mentions.users.size === 0) {
 									ctx.sendMessage("Please ping a player.");
 									return process();
 								} else {
 									collected.first()?.mentions.users.forEach((member) => {
 										data.players.push({
-											userId: member.id,
+											user_id: member.id,
 											pokemon: [],
 											order: data.players.length + 1,
 											skips: 0,
 											queue: [],
 											done: false,
+											auto_skips: false,
 										});
 										embed.addField(
 											`Player __**${member.username}**__`,
@@ -307,24 +346,25 @@ async function setup(
 		case 7:
 			embedMessage.edit(embed).then(async (msg) => {
 				DraftTimer.create({
-					leagueName: data["leagueName"],
+					league_name: data["leagueName"],
 					prefix: data["prefix"].toLowerCase(),
-					maxRounds: data["maxRounds"],
-					totalSkips: data["totalSkips"],
-					pokemon: [],
+					max_rounds: data["maxRounds"],
+					total_skips: data["totalSkips"],
+					pokemons: [],
 					players: data["players"],
 					round: 1,
-					currentPlayer: data.players[0].userId,
-					sheetId: "none",
+					current_player: data.players[0].user_id,
+					sheet_id: "none",
 					direction: "down",
-					channelId: ctx.channelId,
-					serverId: ctx.guildId,
+					channel_id: ctx.channelId,
+					server_id: ctx.guildId,
 					timer: data["timer"],
 					modes: {
 						dm: true,
 						skips: true,
 						text: true,
 					},
+					pause: false,
 				})
 					.then(() => {
 						embed = new MessageEmbed();
@@ -334,6 +374,8 @@ async function setup(
 							"You can now start the draft by using the `startdraft` command."
 						);
 						embedMessage.edit(embed);
+						if (!_data)
+							return client.cache.commands.get("startdraft")?.invoke(ctx);
 					})
 					.catch((error) => {
 						embed = new MessageEmbed();

@@ -1,14 +1,17 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
+import { MessageEmbed, TextChannel } from "discord.js";
+import moment from "moment";
+import { CallbackError } from "mongoose";
+import Timeout from "smart-timeout";
+
+import { Dex } from "@pkmn/dex";
+
+import { client } from "../";
+import DraftTimer, { IDraftTimer } from "../databases/DraftTimer";
+import { GoogleSheets } from "../modules/GoogleSheets";
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { CommandContext } from "../types/commands";
-import DraftTimer, { IDraftTimer } from "../databases/DraftTimer";
-import { CallbackError } from "mongoose";
-import { Dex } from "@pkmn/dex";
-import Timeout from "smart-timeout";
-import { client } from "..";
-import moment from "moment";
-import { MessageEmbed, TextChannel } from "discord.js";
-import { GoogleSheets } from "../modules/GoogleSheets";
+
 export class DraftSystem {
 	constructor(private _ctx: CommandContext) {}
 
@@ -34,11 +37,11 @@ export class DraftSystem {
 	}
 
 	private getCurrentPlayer(record: IDraftTimer) {
-		return record.players.find((x) => x.userId === record.currentPlayer);
+		return record.players.find((x) => x.user_id === record.current_player);
 	}
 
 	public isPokemonTaken(record: IDraftTimer, pokemon: string) {
-		const found = record.pokemon.find(
+		const found = record.pokemons.find(
 			(x) => x.toLowerCase() === pokemon.toLowerCase()
 		);
 		if (found) {
@@ -47,7 +50,7 @@ export class DraftSystem {
 			);
 			return {
 				taken: true,
-				owner: owner?.userId!,
+				owner: owner?.user_id!,
 				pokemon,
 			};
 		}
@@ -80,14 +83,14 @@ export class DraftSystem {
 			: pokemon.toLowerCase();
 	}
 
-	public destroy(prefix: string, channelId: string) {
-		DraftTimer.deleteOne({ prefix, channelId }).catch((error) =>
+	public destroy(prefix: string, channel_id: string) {
+		DraftTimer.deleteOne({ prefix, channel_id }).catch((error) =>
 			console.error(error)
 		);
 	}
 
 	public isInDraft(record: IDraftTimer, userId: string) {
-		return record.players.find((x) => x.userId === userId);
+		return record.players.find((x) => x.user_id === userId);
 	}
 	public async addPlayer(callback: (record: IDraftTimer) => IDraftTimer) {
 		const record = await this.getDraftData();
@@ -96,18 +99,18 @@ export class DraftSystem {
 	}
 
 	public isPlayersTurn(record: IDraftTimer, userId: string) {
-		return userId == record.currentPlayer;
+		return userId == record.current_player;
 	}
 
 	public getPlayer(record: IDraftTimer, userId: string) {
-		return record.players.find((x) => x.userId === userId);
+		return record.players.find((x) => x.user_id === userId);
 	}
 
 	public async start(record: IDraftTimer) {
 		await this._ctx.sendMessage(`Draft Timer has been turned on.`);
 		await this.askForPick(record);
 		Timeout.create(
-			record.leagueName,
+			record.league_name,
 			async () => {
 				record = await this.skip(record);
 				await this.askForPick(record);
@@ -117,9 +120,9 @@ export class DraftSystem {
 	}
 
 	private async setTimer(record: IDraftTimer, time: number) {
-		Timeout.clear(record.leagueName, true);
+		Timeout.clear(record.league_name, true);
 		Timeout.create(
-			record.leagueName,
+			record.league_name,
 			async () => {
 				await this.skip(record);
 			},
@@ -131,8 +134,8 @@ export class DraftSystem {
 		return await new Promise(() => {
 			const embed = new MessageEmbed();
 			embed.setTitle("Time Remaining.");
-			const time = moment(Timeout.remaining(record.leagueName));
-			const str = `<@${record.currentPlayer}> has ${
+			const time = moment(Timeout.remaining(record.league_name));
+			const str = `<@${record.current_player}> has ${
 				time.minutes() >= 60
 					? `${time.hours()} hours`
 					: time.minutes() > 0
@@ -157,7 +160,7 @@ export class DraftSystem {
 					.catch((error) => console.error(error))) as IDraftTimer;
 				await this.makePick(
 					this._ctx,
-					player!.userId,
+					player!.user_id,
 					record.prefix,
 					pokemon!,
 					""
@@ -180,13 +183,13 @@ export class DraftSystem {
 				await this.askForPick(record);
 				return;
 			}
-			if (record.modes.skips && player!.skips >= record.totalSkips) {
+			if (record.modes.skips && player!.skips >= record.total_skips) {
 				record = (await this.skip(record)) as IDraftTimer;
 				await this.askForPick(record);
 				return;
 			}
 			if (record.modes.dm) {
-				(await client.users?.fetch(player?.userId!))
+				(await client.users?.fetch(player?.user_id!))
 					.createDM()
 					.then(async (dm) => {
 						await this.setTimer(
@@ -196,7 +199,7 @@ export class DraftSystem {
 								: Math.floor(Math.round(record.timer / (2 * player!.skips)))
 						);
 						const pickEmbed = new MessageEmbed()
-							.setTitle(`Its your pick in ${record.leagueName}`)
+							.setTitle(`Its your pick in ${record.league_name}`)
 							.setDescription(
 								`Your league's prefix is \`${record.prefix}\`To draft a pokemon type in \`m!pick ${record.prefix} <pokemon name>\` example: \`m!pick ${record.prefix} lopunny\``
 							)
@@ -212,12 +215,12 @@ export class DraftSystem {
 								}`
 							)
 							.setFooter(
-								`We are on pick ${player?.order} of round ${record.round} / ${record.maxRounds}`
+								`We are on pick ${player?.order} of round ${record.round} / ${record.max_rounds}`
 							);
 						dm.send(pickEmbed);
 						const serverEmbed = new MessageEmbed()
 							.setDescription(
-								`<@${record.currentPlayer}> is on the Clock!\nWe are on pick ${player?.order} of round ${record.round} / ${record.maxRounds}`
+								`<@${record.current_player}> is on the Clock!\nWe are on pick ${player?.order} of round ${record.round} / ${record.max_rounds}`
 							)
 							.addField(
 								"Timer:",
@@ -235,7 +238,7 @@ export class DraftSystem {
 			} else {
 				const serverEmbed = new MessageEmbed()
 					.setDescription(
-						`<@${record.currentPlayer}> is on the Clock!\nWe are on pick ${player?.order} of round ${record.round} / ${record.maxRounds}`
+						`<@${record.current_player}> is on the Clock!\nWe are on pick ${player?.order} of round ${record.round} / ${record.max_rounds}`
 					)
 					.addField(
 						"Timer:",
@@ -249,7 +252,7 @@ export class DraftSystem {
 					)
 					.setColor("RANDOM");
 				await (this._ctx.channel as TextChannel).send(
-					`<@${record.currentPlayer}>`,
+					`<@${record.current_player}>`,
 					{
 						embed: serverEmbed,
 					}
@@ -264,7 +267,7 @@ export class DraftSystem {
 			record.direction = record.direction === "down" ? "up" : "down";
 		}
 		await this._ctx.sendMessage(
-			`Skipped ${(await client.users.fetch(record.currentPlayer)).username}`
+			`Skipped ${(await client.users.fetch(record.current_player)).username}`
 		);
 		player!.skips++;
 		record = (await this.next(record)) as IDraftTimer;
@@ -278,19 +281,19 @@ export class DraftSystem {
 				record.direction = "up";
 				record.round++;
 			} else
-				record.currentPlayer = record.players.find(
+				record.current_player = record.players.find(
 					(x) => x.order === player?.order! + 1
-				)?.userId!;
+				)?.user_id!;
 		} else if (record.direction === "up") {
 			if (player?.order === 1) {
 				record.direction = "down";
 				record.round++;
 			} else
-				record.currentPlayer = record.players.find(
+				record.current_player = record.players.find(
 					(x) => x.order === player?.order! - 1
-				)?.userId!;
+				)?.user_id!;
 		}
-		if (record.round > record.maxRounds) {
+		if (record.round > record.max_rounds) {
 			const finishedEmbed = new MessageEmbed();
 			finishedEmbed.setTitle("Draft has concluded");
 			finishedEmbed.setDescription(
@@ -307,7 +310,7 @@ export class DraftSystem {
 				);
 
 				finishedEmbed.addField(
-					`Player ${(await client.users.fetch(_player.userId)).username}`,
+					`Player ${(await client.users.fetch(_player.user_id)).username}`,
 					desc,
 					true
 				);
@@ -328,7 +331,7 @@ export class DraftSystem {
 	) {
 		const record = (await this.whichLeague(prefix)) as IDraftTimer;
 		console.debug(record);
-		const player = record.players.find((x) => x.userId === userId)!;
+		const player = record.players.find((x) => x.user_id === userId)!;
 		if (!record)
 			return ctx.sendMessage(
 				"There doesn't seem like there is a league with the prefix"
@@ -347,29 +350,29 @@ export class DraftSystem {
 		const oldName = Dex.getSpecies(oldPokemon);
 
 		const draftEmbed = new MessageEmbed();
-		record.pokemon![
-			record.pokemon!.findIndex((x) => x === oldName.name)
+		record.pokemons![
+			record.pokemons!.findIndex((x) => x === oldName.name)
 		]! = newName.name;
 		player!.pokemon![
-			record.pokemon!.findIndex((x) => x === oldName.name)
+			record.pokemons!.findIndex((x) => x === oldName.name)
 		]! = newName.name;
 		draftEmbed.setDescription(
-			`<@${record.currentPlayer}> has drafted **${newName.name}** instead of **${oldName.name}**`
+			`<@${record.current_player}> has drafted **${newName.name}** instead of **${oldName.name}**`
 		);
 		const img = DraftSystem.getImageForPokemon(newName.name);
 		draftEmbed.setImage(
 			`https://play.pokemonshowdown.com/sprites/ani/${img}.gif`
 		);
 		draftEmbed.setColor("RANDOM");
-		console.log(record.sheetId);
+		console.log(record.sheet_id);
 		await this._ctx.sendMessage(draftEmbed);
-		if (record.sheetId !== undefined && record.sheetId !== "none") {
+		if (record.sheet_id !== undefined && record.sheet_id !== "none") {
 			const gs = new GoogleSheets();
 			await gs.update({
-				spreadsheetId: record.sheetId,
+				spreadsheetId: record.sheet_id,
 				data: [
 					[
-						(await client.users.fetch(player.userId)).username,
+						(await client.users.fetch(player.user_id)).username,
 						oldName.name,
 						newName.name,
 					],
@@ -406,12 +409,12 @@ export class DraftSystem {
 			);
 		}
 		const name = Dex.getSpecies(pokemon);
-		record.pokemon.push(name.name);
+		record.pokemons.push(name.name);
 		player?.pokemon.push(name.name);
 		const draftEmbed = new MessageEmbed();
 
 		draftEmbed.setDescription(
-			`<@${record.currentPlayer}> Has Drafted **${name.name}**${
+			`<@${record.current_player}> Has Drafted **${name.name}**${
 				text !== "" ? `\n${text}` : ""
 			}`
 		);
@@ -420,10 +423,10 @@ export class DraftSystem {
 			`https://play.pokemonshowdown.com/sprites/ani/${img}.gif`
 		);
 		draftEmbed.setColor("RANDOM");
-		console.log(record.sheetId);
+		console.log(record.sheet_id);
 		await this._ctx.sendMessage(draftEmbed);
-		if (record.sheetId !== undefined && record.sheetId !== "none") {
-			await DraftSystem.sendToSheet(record.sheetId, [
+		if (record.sheet_id !== undefined && record.sheet_id !== "none") {
+			await DraftSystem.sendToSheet(record.sheet_id, [
 				[(await client.users.fetch(userId)).username, name.name],
 			]);
 			console.log("Set to sheets");
@@ -467,12 +470,12 @@ export class DraftSystem {
 		embed.setImage(`https://play.pokemonshowdown.com/sprites/ani/${img}.gif`);
 		embed.setColor("RANDOM");
 
-		record.pokemon.push(name.name);
+		record.pokemons.push(name.name);
 		player?.pokemon.push(name.name);
 		player!.skips--;
 
-		if (record.sheetId !== undefined && record.sheetId !== "none") {
-			await DraftSystem.sendToSheet(record.sheetId, [
+		if (record.sheet_id !== undefined && record.sheet_id !== "none") {
+			await DraftSystem.sendToSheet(record.sheet_id, [
 				[(await client.users.fetch(userId)).username, name.name],
 			]);
 			console.log("Set to sheets");
@@ -492,8 +495,8 @@ export class DraftSystem {
 
 	public async stop(record: IDraftTimer) {
 		await this._ctx.sendMessage("Stopping Draft");
-		if (Timeout.exists(record.leagueName))
-			Timeout.clear(record.leagueName, true);
+		if (Timeout.exists(record.league_name))
+			Timeout.clear(record.league_name, true);
 		client.cache.drafts.delete(record.prefix);
 	}
 }

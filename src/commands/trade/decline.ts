@@ -1,6 +1,7 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
 import { client } from "../../index";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
+
 createCommand({
 	name: "decline",
 	description: "Allows you to decline the trade.",

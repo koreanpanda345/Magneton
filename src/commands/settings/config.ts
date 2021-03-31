@@ -1,8 +1,9 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import SettingsSchema, { ISettings } from "../../databases/SettingsSchema";
-import { CallbackError } from "mongoose";
 import { MessageEmbed } from "discord.js";
+import { CallbackError } from "mongoose";
+
+import SettingsSchema, { ISettings } from "../../databases/SettingsSchema";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "config",

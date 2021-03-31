@@ -1,9 +1,10 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
-import { DraftSystem } from "../../systems/DraftSystem";
+
 import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { DraftSystem } from "../../systems/DraftSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "startdraft",
@@ -17,12 +18,13 @@ createCommand({
 	invoke: async (ctx: CommandContext) => {
 		return await new Promise((resolve) => {
 			DraftTimer.findOne(
-				{ channelId: ctx.channelId },
-				(error: CallbackError, record: IDraftTimer) => {
-					if (!record)
-						return ctx.sendMessage(
-							"There is no draft maded. Please set one up, by using the `setdraft` command."
-						);
+				{ channel_id: ctx.channelId },
+				async (error: CallbackError, record: IDraftTimer) => {
+					if (!record) {
+						return client.cache.commands
+							?.get("setdraft")
+							?.invoke(ctx, { from: "startdraft" });
+					}
 					if (client.cache.drafts.has(record.prefix))
 						return ctx.sendMessage("There is already a draft made.");
 					const draft = new DraftSystem(ctx);
@@ -30,6 +32,9 @@ createCommand({
 					draft.start(record);
 					console.debug(record);
 					client.cache.drafts.set(record.prefix, draft);
+					client.user?.setActivity(
+						`In ${client.guilds.cache.size} Servers | Currently Running ${client.cache.drafts.size} Drafts`
+					);
 				}
 			);
 		});

@@ -1,9 +1,11 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
-import { client } from "../..";
+
 import { Dex } from "@pkmn/dex";
+
+import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "editpick",
@@ -24,7 +26,7 @@ createCommand({
 		const newPokemon = ctx.args.join(" ").split(",")[1];
 
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			async (error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(

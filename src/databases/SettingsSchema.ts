@@ -1,4 +1,5 @@
 import mongoose, { Document } from "mongoose";
+
 const Schema = mongoose.Schema;
 
 export interface ISettings extends Document {

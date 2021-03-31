@@ -1,6 +1,3 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import { TeamStorageSystem } from "../../systems/TeamStorageSystem";
 import {
 	Message,
 	MessageEmbed,
@@ -8,6 +5,10 @@ import {
 	ReactionEmoji,
 	User,
 } from "discord.js";
+
+import { TeamStorageSystem } from "../../systems/TeamStorageSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "getteam",

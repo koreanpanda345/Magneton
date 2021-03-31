@@ -1,9 +1,10 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
-import { DraftSystem } from "../../systems/DraftSystem";
+
 import { client } from "../..";
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { DraftSystem } from "../../systems/DraftSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "addplayer",
@@ -16,7 +17,7 @@ createCommand({
 	},
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			async (error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
@@ -32,12 +33,14 @@ createCommand({
 				const draft = new DraftSystem(ctx);
 				await draft.addPlayer((data) => {
 					data.players.push({
-						userId: player?.id as string,
+						user_id: player?.id as string,
 						pokemon: [] as string[],
 						order: data.players.length + 1,
 						skips: 0,
 						queue: [] as string[],
 						done: false,
+						username: player?.username,
+						auto_skip: false,
 					});
 
 					return data;

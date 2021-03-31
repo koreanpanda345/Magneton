@@ -1,9 +1,12 @@
-import { CommandContext } from "../types/commands";
-import { Sets, PokemonSet } from "@pkmn/sets";
-import fetch from "node-fetch";
-import TeamStorage, { ITeamStorage } from "../databases/TeamStorage";
-import { CallbackError } from "mongoose";
 import { Message, MessageEmbed } from "discord.js";
+import { CallbackError } from "mongoose";
+import fetch from "node-fetch";
+
+import { PokemonSet, Sets } from "@pkmn/sets";
+
+import TeamStorage, { ITeamStorage } from "../databases/TeamStorage";
+import { CommandContext } from "../types/commands";
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const TinyUrl = require("tinyurl");
 // eslint-disable-next-line @typescript-eslint/no-var-requires

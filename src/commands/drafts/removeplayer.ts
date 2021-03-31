@@ -1,8 +1,9 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
+
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { DraftSystem } from "../../systems/DraftSystem";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "removeplayer",
@@ -14,7 +15,7 @@ createCommand({
 	usages: ["m!removeplayer <@who>", "m!remove <@who>"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			(error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
@@ -22,11 +23,11 @@ createCommand({
 					);
 				const list: string[] = [];
 				ctx.message.mentions.users.forEach((user) => {
-					if (!record.players.find((x) => x.userId === user.id))
+					if (!record.players.find((x) => x.user_id === user.id))
 						ctx.sendMessage(`Player ${user.username} is not in the draft.`);
 					else {
 						record.players.splice(
-							record.players.findIndex((x) => x.userId === user.id),
+							record.players.findIndex((x) => x.user_id === user.id),
 							1
 						);
 						list.push(user.username);

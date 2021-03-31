@@ -1,8 +1,9 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import { parsePrefix } from "../../monitors/commandHandler";
 import { MessageEmbed } from "discord.js";
+
 import { client } from "../..";
+import { parsePrefix } from "../../monitors/commandHandler";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "help",

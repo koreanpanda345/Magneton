@@ -1,5 +1,5 @@
+import { client } from "../";
 import { Command } from "../types/commands";
-import { client } from "..";
 import { Events } from "../types/events";
 import { Monitor } from "../types/monitors";
 

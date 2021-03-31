@@ -1,7 +1,8 @@
-import { createCommand } from "../../utils/helpers";
-import { CommandContext } from "../../types/commands";
-import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
 import { CallbackError } from "mongoose";
+
+import DraftTimer, { IDraftTimer } from "../../databases/DraftTimer";
+import { CommandContext } from "../../types/commands";
+import { createCommand } from "../../utils/helpers";
 
 createCommand({
 	name: "usesheets",
@@ -9,7 +10,7 @@ createCommand({
 	usages: ["m!usesheets <sheet url>"],
 	invoke: async (ctx: CommandContext) => {
 		DraftTimer.findOne(
-			{ channelId: ctx.channelId },
+			{ channel_id: ctx.channelId },
 			(error: CallbackError, record: IDraftTimer) => {
 				if (!record)
 					return ctx.sendMessage(
@@ -20,7 +21,7 @@ createCommand({
 				if (url.startsWith("https://docs.google.com/spreadsheets/d/"))
 					id = url.split("/")[5];
 
-				record.sheetId = id;
+				record.sheet_id = id;
 
 				record.save().catch((error) => console.error(error));
 
