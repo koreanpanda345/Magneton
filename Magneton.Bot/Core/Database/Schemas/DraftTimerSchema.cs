@@ -2,21 +2,27 @@
 using System.Collections.Generic;
 using System.Linq;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Magneton.Bot.Core.Database.Schemas
 {
-    public class DraftTimerSchema : BaseSchema
-    {
-        public DraftTimerSchema(BsonDocument document) : base (document){}
 
-        public string _Id
+    public class DraftSchema : BaseSchema
+    {
+        public DraftSchema(BsonDocument document): base(document){}
+
+        public FilterDefinition<BsonDocument> Filter
         {
-            get { return Document["_id"].AsString; }
+            get { return Builders<BsonDocument>.Filter.Eq("channel_id", Document["channel_id"]); }
         }
         public string LeagueName
         {
             get { return Document["league_name"].AsString; }
-            set { Document["league_name"] = value; }
+            set
+            {
+                Document["league_name"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+            }
         }
 
         public List<string> Pokemons
@@ -31,15 +37,115 @@ namespace Magneton.Bot.Core.Database.Schemas
 
                 return list;
             }
-            set { Document["pokemon"] = BsonValue.Create(value); }
+            set
+            {
+                Document["pokemons"] = BsonValue.Create(value);
+                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+            }
         }
 
+        public int Id
+        {
+            get { return Document["id"].AsInt32; }
+            set
+            {
+                Document["id"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public int MaxRounds
+        {
+            get { return Document["max_rounds"].AsInt32;}
+            set
+            {
+                Document["max_rounds"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public int TotalSkips
+        {
+            get { return Document["total_skips"].AsInt32;}
+            set
+            {
+                Document["total_skips"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public int Round
+        {
+            get { return Document["round"].AsInt32;}
+            set
+            {
+                Document["round"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public ulong? CurrentPlayer
+        {
+            get { return ulong.Parse(Document["current_player"].AsString);}
+            set
+            {
+                Document["current_player"] = value.ToString();
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public string SheetId
+        {
+            get { return Document["sheet_id"].AsString;}
+            set
+            {
+                Document["sheet_id"] = value;
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+
+        public ulong ChannelId
+        {
+            get { return ulong.Parse(Document["channel_id"].AsString);}
+            set
+            {
+                Document["channel_id"] = value.ToString();
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
+            }
+        }
+        
+    }
+    public class DraftTimerSchema : BaseSchema
+    {
+        public DraftTimerSchema(BsonDocument document) : base (document){}
+        public string _Id
+        {
+            get { return Document["_id"].AsString; }
+        }
+        public string LeagueName
+        {
+            get { return Document["league_name"].AsString; }
+            set { Document["league_name"] = value; }
+        }
+        public List<string> Pokemons
+        {
+            get
+            {
+                var list = new List<string>();
+                foreach (var pokemon in Document["pokemons"].AsBsonArray)
+                {
+                    list.Add(pokemon.AsString);
+                }
+
+                return list;
+            }
+            set { Document["pokemon"] = BsonValue.Create(value); }
+        }
         public string Id
         {
             get { return Document["id"].AsString; }
             set { Document["id"] = value; }
         }
-
         public int MaxRounds
         {
             get { return Document["max_rounds"].AsInt32; }

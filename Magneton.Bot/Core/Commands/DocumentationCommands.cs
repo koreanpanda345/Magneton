@@ -25,7 +25,8 @@ namespace Magneton.Bot.Core.Commands
             {
                 {new Page(null, DraftDocumentation.FirstPage())},
                 {new Page(null, DraftDocumentation.SecondPage())},
-                {new Page(null, DraftDocumentation.ThirdPage())}
+                {new Page(null, DraftDocumentation.ThirdPage())},
+                {new Page(null, DraftDocumentation.FourthPage())}
             };
             
             await interactivity.SendPaginatedMessageAsync(ctx.Channel, ctx.User, pages);

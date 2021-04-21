@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Magneton.Bot.Core.Database.Managers;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -26,51 +27,11 @@ namespace Magneton.Bot.Core.Database
             }
         }
 
-        internal static BsonDocument GetData(FilterDefinition<BsonDocument> filter)
+        internal static DraftManager Draft
         {
-            var collection = database.GetCollection<BsonDocument>("drafttimers");
-            var result = collection.Find(filter).FirstOrDefault();
-            return result;
-        }
-
-        internal static async Task UpdateDocument(FilterDefinition<BsonDocument> filter, BsonDocument update)
-        {
-            try
+            get
             {
-                var collection = database.GetCollection<BsonDocument>("drafttimers");
-                await collection.ReplaceOneAsync(filter, update).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Data);
-                Console.WriteLine(ex.Message);
-            }
-        }
-
-        internal static async Task DeleteDocument(FilterDefinition<BsonDocument> filter)
-        {
-            try
-            {
-                var collection = database.GetCollection<BsonDocument>("drafttimers");
-                await collection.DeleteOneAsync(filter).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            
-        }
-
-        internal static async Task InsertDocument(BsonDocument document)
-        {
-            try
-            {
-                var collection = database.GetCollection<BsonDocument>("drafttimers");
-                await collection.InsertOneAsync(document).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
+                return new DraftManager(client, database);
             }
         }
     }

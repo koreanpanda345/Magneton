@@ -80,6 +80,7 @@ namespace Magneton.Bot.Core
             Commands.RegisterCommands<DocumentationCommands>();
             //Commands.RegisterCommands<DraftPlayerCommands>();
             Commands.RegisterCommands<ToolCommands>();
+            Commands.RegisterCommands<TestCommands>();
             await Client.ConnectAsync();
 
             await Task.Delay(-1);

@@ -215,8 +215,11 @@
         <Compile Include="Core\Commands\DraftCommands.cs" />
         <Compile Include="Core\Commands\DraftPlayerCommands.cs" />
         <Compile Include="Core\Commands\MiscellaneousCommands.cs" />
+        <Compile Include="Core\Commands\TestCommands.cs" />
         <Compile Include="Core\Commands\ToolCommands.cs" />
         <Compile Include="Core\ConfigJson.cs" />
+        <Compile Include="Core\Database\Managers\BaseManager.cs" />
+        <Compile Include="Core\Database\Managers\DraftManager.cs" />
         <Compile Include="Core\Database\MongoHelper.cs" />
         <Compile Include="Core\Database\Schemas\BaseSchema.cs" />
         <Compile Include="Core\Database\Schemas\DraftTimerSchema.cs" />
@@ -229,6 +232,7 @@
         <Compile Include="Core\Handlers\Dialogue\Steps\ReactionStep.cs" />
         <Compile Include="Core\Handlers\Dialogue\Steps\RoleStep.cs" />
         <Compile Include="Core\Handlers\Dialogue\Steps\TextStep.cs" />
+        <Compile Include="Core\Handlers\Draft\DraftCommandHandler.cs" />
         <Compile Include="Core\Handlers\Draft\DraftHandler.cs" />
         <Compile Include="Core\MagnetonClient.cs" />
         <Compile Include="Core\Utils\PokemonUtils.cs" />
@@ -247,6 +251,7 @@
       <Content Include="libmongocrypt.dylib" />
       <Content Include="libmongocrypt.so" />
       <Content Include="mongocrypt.dll" />
+      <Content Include="README.md" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <Import Project="..\packages\MongoDB.Libmongocrypt.1.2.1\build\MongoDB.Libmongocrypt.targets" Condition="Exists('..\packages\MongoDB.Libmongocrypt.1.2.1\build\MongoDB.Libmongocrypt.targets')" />

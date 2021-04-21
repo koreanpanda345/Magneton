@@ -37,9 +37,9 @@ namespace Magneton.Bot.Core.Handlers.Draft
             Filter = Builders<BsonDocument>.Filter.Eq("channel_id", _draftChannel.Id.ToString());
         }
 
-        public BsonDocument GetData()
+        public async Task<BsonDocument> GetData()
         {
-            return MongoHelper.GetData(Filter);
+            return await MongoHelper.Draft.GetAsync(Filter);
         }
 
         public async Task StopDraft(CommandContext ctx)
@@ -62,18 +62,18 @@ namespace Magneton.Bot.Core.Handlers.Draft
         {
             get
             {
-                return GetData();
+                return GetData().GetAwaiter().GetResult();
             }
             
             set
             {
-                MongoHelper.UpdateDocument(Filter, value).GetAwaiter().GetResult();
+                MongoHelper.Draft.UpdateAsync(Filter, value).GetAwaiter().GetResult();
             }
         }
         
         public async Task StartDraft(CommandContext ctx)
         {
-            if (Data["stop"].AsBoolean == true)
+            if (Data["stop"].AsBoolean)
             {
                 await StopDraft(ctx);
                 return;
@@ -86,7 +86,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
             });
             var onClockEmbed = new DiscordEmbedBuilder()
             {
-                Description = $"{_currentPlayer.Mention} is on the clock.\nTimer: {GetData()["timer"]} minutes.",
+                Description = $"{_currentPlayer.Mention} is on the clock.\nTimer: {(await GetData())["timer"]} minutes.",
                 Color = DiscordColor.Orange,
                 //Footer =
                 //{
@@ -127,6 +127,104 @@ namespace Magneton.Bot.Core.Handlers.Draft
         public async Task GetWheelPick(CommandContext ctx)
         {
             // Asks for the first pick, then the second pick.
+            var pokemon1 = string.Empty;
+            var pokemon2 = string.Empty;
+            // Pick 1
+            while (true)
+            {
+                var response = await WaitForPick(ctx);
+                if (response.TimedOut)
+                {
+                    break;
+                }
+                else
+                {
+                    if (await DoesPokemonExist(PokemonUtils.ResolveName(response.Content)).ConfigureAwait(false))
+                    {
+                        await _draftingChannel.SendMessageAsync(
+                                "The requested pokemon doesn't seem to exist. Please pick a valid pokemon.")
+                            .ConfigureAwait(false);
+                        continue;
+                    }
+                    else
+                    {
+                        if (CheckIfPokemonHasAlreadyBeenDrafted(PokemonUtils.ResolveName(response.Content)))
+                        {
+                            await _draftingChannel.SendMessageAsync(
+                                "That pokemon is already drafted. Please pick another pokemon.").ConfigureAwait(false);
+                            continue;
+                        }
+                        else
+                        {
+                            pokemon1 = PokemonUtils.ResolveName(response.Content);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            await _draftChannel.SendMessageAsync("What is your second pick?").ConfigureAwait(false);
+            // Pick 2
+            while (true)
+            {
+                var response = await WaitForPick(ctx);
+                if (response.TimedOut)
+                {
+                    break;
+                }
+                else
+                {
+                    if (await DoesPokemonExist(PokemonUtils.ResolveName(response.Content)).ConfigureAwait(false))
+                    {
+                        await _draftingChannel.SendMessageAsync(
+                                "The requested pokemon doesn't seem to exist. Please pick a valid pokemon.")
+                            .ConfigureAwait(false);
+                        continue;
+                    }
+                    else
+                    {
+                        if (CheckIfPokemonHasAlreadyBeenDrafted(PokemonUtils.ResolveName(response.Content)))
+                        {
+                            await _draftingChannel.SendMessageAsync(
+                                "That pokemon is already drafted. Please pick another pokemon.").ConfigureAwait(false);
+                            continue;
+                        }
+                        else
+                        {
+                            pokemon2 = PokemonUtils.ResolveName(response.Content);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            await UpdateField(doc =>
+            {
+                var current = doc["players"].AsBsonArray
+                    .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"])?.AsBsonDocument;
+                current?["pokemon"].AsBsonArray.Add(pokemon1);
+                current?["pokemon"].AsBsonArray.Add(pokemon2);
+                return doc;
+            }).ConfigureAwait(false);
+            
+            var embed1 = new DiscordEmbedBuilder
+            {
+                Description = $"{_currentPlayer.Mention}, has drafted {pokemon1}",
+                Color = DiscordColor.Green,
+                ImageUrl = $"https://pokemonshowdown.com/sprites/ani/{pokemon1}.gif"
+            };
+
+            await _draftChannel.SendMessageAsync(embed: embed1.Build()).ConfigureAwait(false);
+            
+            var embed2 = new DiscordEmbedBuilder
+            {
+                Description = $"{_currentPlayer.Mention}, has drafted {pokemon2}",
+                Color = DiscordColor.Green,
+                ImageUrl = $"https://pokemonshowdown.com/sprites/ani/{pokemon2}.gif"
+            };
+
+            await _draftChannel.SendMessageAsync(embed: embed2.Build()).ConfigureAwait(false);
+            await NextPlayer(ctx);
         }
 
         public async Task<PickResult> WaitForPick(CommandContext ctx)
