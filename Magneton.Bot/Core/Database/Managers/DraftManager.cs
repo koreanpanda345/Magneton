@@ -7,9 +7,11 @@ namespace Magneton.Bot.Core.Database.Managers
 {
     public class DraftManager : BaseManager
     {
-        
-        public DraftManager(IMongoClient client, IMongoDatabase database): base(client, database) {}
-        
+
+        public DraftManager(IMongoClient client, IMongoDatabase database) : base(client, database)
+        {
+        }
+
         public async Task<BsonDocument> GetAsync(FilterDefinition<BsonDocument> filter)
         {
             var data = await _collection.FindAsync(filter).ConfigureAwait(false);

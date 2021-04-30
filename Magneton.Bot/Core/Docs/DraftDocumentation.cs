@@ -9,22 +9,23 @@ namespace Magneton.Bot.Core.Docs
 
         public static DiscordEmbedBuilder FirstPage()
         {
-            var firstPage =  new DiscordEmbedBuilder();
+            var firstPage = new DiscordEmbedBuilder();
             firstPage.Title = "Documentation on the Draft Command Category.";
             firstPage.Description = "Pages: \n" +
                                     "1 - Table Of Contents\n" +
                                     "2 - Setting up the draft.\n" +
                                     "3 - Adding/Removing Players.\n" +
-                                    "4 - Drafting a Pokemon.";
+                                    "4 - Drafting a Pokemon.\n" +
+                                    "5 - FAQ";
             return firstPage;
         }
 
         public static DiscordEmbedBuilder SecondPage()
         {
             var secondPage = new DiscordEmbedBuilder();
-            
 
-            
+
+
             secondPage.Title = "Settings up the draft.";
             secondPage.Description =
                 "In order to set up the draft, you need to use the create subcommand of the draft command.\n" +
@@ -34,7 +35,8 @@ namespace Magneton.Bot.Core.Docs
                 "If it doesn't do what it needs to do, then join the support server, or contact koreanpanda345#2878";
 
             secondPage.AddField("WARNING",
-                "The bot needs to have 3 server permissions in order to function properly. These perms are `Manage Channels`, `Manage Messages`, and `Manage Roles`. These need to be enabled for the bot.", true);
+                "The bot needs to have 3 server permissions in order to function properly. These perms are `Manage Channels`, `Manage Messages`, and `Manage Roles`. These need to be enabled for the bot.",
+                true);
             return secondPage;
         }
 
@@ -43,12 +45,11 @@ namespace Magneton.Bot.Core.Docs
             var thirdPage = new DiscordEmbedBuilder();
 
             thirdPage.Title = "Adding/Removing Players";
-            thirdPage.Description =
-                "For now, you will need enter each player one by one. In future updates, this will be change to do a massive add of players.\n" +
-                "But to add a player, simply use the player add sub command of the draft commands.\n" +
-                "To use this command you can either do `m!draft player add <@who>`, `m!draft player a <@who>`, `m!draft p add <@who>`, `m!draft p a <@who>`, `m!d player add <@who>`, `m!d player a <@who>`, or `m!d p a <@who>`.\n" +
-                "If you would like to remove a player, then you would need to use the player remove command.\n" +
-                "To use this command you can either do `m!draft player remove <@who>`, `m!draft player r <@who>`, `m!draft p remove <@who>`, `m!draft p r <@who>`, `m!d player remove <@who>`, `m!d player r <@whp>`, or `m!d p r <@who>`.\n";
+            thirdPage.Description = "When you create the draft you will need to add players to the draft in order to start it.\n" +
+                                    "To add players you will want to use the `draft player add` command. You can add an individual player, or multiply players to the draft.\n" +
+                                    "You need to ping them in order for the bot to add them, because of how discord ids work, sometimes user's ids are missing a number for some odd reason, and doesn't register.\n\n" +
+                                    "To remove players you will want to use the `draft player remove` command. You can remove an individual, or multiply players from the draft.\n" +
+                                    "You need to ping them in order for the bot to remove them.";
             return thirdPage;
         }
 
@@ -57,10 +58,11 @@ namespace Magneton.Bot.Core.Docs
             var fourthPage = new DiscordEmbedBuilder
             {
                 Title = "Drafting a pokemon",
-                Description = "When it is the player's turn, the bot will ping them in the drafting channel that it is their turn.\n" +
-                              "It will manage timer for you, and timer will be in minutes, and was setup when you setup the draft.\n" +
-                              "When the player is going to make their pick, they will need to say the pick in the drafting channel.\n" +
-                              "Note: The bot will be playing with the drafting role. It will need to have the `Manage Roles` perms enabled.\n"
+                Description =
+                    "When it is the player's turn, the bot will ping them in the drafting channel that it is their turn.\n" +
+                    "It will manage timer for you, and timer will be in minutes, and was setup when you setup the draft.\n" +
+                    "When the player is going to make their pick, they will need to say the pick in the drafting channel.\n" +
+                    "Note: The bot will be playing with the drafting role. It will need to have the `Manage Roles` perms enabled.\n"
             };
             return fourthPage;
         }
@@ -68,7 +70,9 @@ namespace Magneton.Bot.Core.Docs
         public static DiscordEmbedBuilder LastPage()
         {
             var finalPage = new DiscordEmbedBuilder();
-
+            finalPage.Title = "FAQ";
+            finalPage.AddField("What if I am done drafting pokemon, but the draft is still happening?", "" +
+                "Once its your turn again, type in `done` in the drafting channel. anytime its your turn after that, will skip over you, and will not ping you.");
             return finalPage;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -27,7 +28,8 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
         private FilterDefinition<BsonDocument> Filter;
 
-        public DraftHandler(DiscordClient client, DiscordChannel draftingChannel, DiscordChannel draftChannel, DiscordMember currentPlayer, BsonDocument draft, DiscordRole role)
+        public DraftHandler(DiscordClient client, DiscordChannel draftingChannel, DiscordChannel draftChannel,
+            DiscordMember currentPlayer, BsonDocument draft, DiscordRole role)
         {
             _client = client;
             _draftingChannel = draftingChannel;
@@ -49,28 +51,22 @@ namespace Magneton.Bot.Core.Handlers.Draft
             await UpdateField((doc) =>
             {
                 doc["stop"] = false;
-                return doc;
+                return Task.FromResult(doc);
             });
         }
 
-        public async Task UpdateField(Func<BsonDocument, BsonDocument> callback)
+        public async Task UpdateField(Func<BsonDocument, Task<BsonDocument>> callback)
         {
-            Data = callback(Data);
+            Data = await callback(Data);
         }
 
         public BsonDocument Data
         {
-            get
-            {
-                return GetData().GetAwaiter().GetResult();
-            }
-            
-            set
-            {
-                MongoHelper.Draft.UpdateAsync(Filter, value).GetAwaiter().GetResult();
-            }
+            get { return GetData().GetAwaiter().GetResult(); }
+
+            set { MongoHelper.Draft.UpdateAsync(Filter, value).GetAwaiter().GetResult(); }
         }
-        
+
         public async Task StartDraft(CommandContext ctx)
         {
             if (Data["stop"].AsBoolean)
@@ -79,19 +75,26 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 return;
             }
 
-            if (Data["round"].AsInt32 == 0) await UpdateField((doc) =>
+            if (Data["players"].AsBsonArray.FirstOrDefault(x => x.AsBsonDocument["user_id"] == Data["current_player"])
+                ?.AsBsonDocument["done"].AsBoolean == true)
             {
-                doc["round"] = doc["round"].AsInt32 + 1;
-                return doc;
-            });
+                await _draftingChannel
+                    .SendMessageAsync($"{_currentPlayer.Username}, is done. So we will move on to the next player.")
+                    .ConfigureAwait(false);
+                await NextPlayer(ctx);
+                return;
+            }
+
             var onClockEmbed = new DiscordEmbedBuilder()
             {
-                Description = $"{_currentPlayer.Mention} is on the clock.\nTimer: {(await GetData())["timer"]} minutes.",
+                Description =
+                    $"{_currentPlayer.Mention} is on the clock.\nTimer: {(await GetData())["timer"]} minutes.",
                 Color = DiscordColor.Orange,
-                //Footer =
-                //{
-                //    Text = $"Pick {_draft["players"].AsBsonArray.FirstOrDefault(x => x.AsBsonDocument["user_id"] == _draft["current_player"])?.AsBsonDocument["order"].AsInt32} of Round {_draft["round"]} / {_draft["max_rounds"]}"
-                //}
+                Footer = new DiscordEmbedBuilder.EmbedFooter
+                {
+                    Text =
+                        $"Pick {Data["players"].AsBsonArray.FirstOrDefault(x => x.AsBsonDocument["user_id"] == Data["current_player"])?.AsBsonDocument["order"]} of Round {Data["round"]} / {Data["max_rounds"]}"
+                }
             };
             await _draftChannel.SendMessageAsync(embed: onClockEmbed.Build()).ConfigureAwait(false);
             var current = Data["players"].AsBsonArray
@@ -102,6 +105,62 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 await GetWheelPick(ctx);
         }
 
+        public async Task<bool> PlayerHasQueue()
+        {
+            var player = Data["players"].AsBsonArray
+                .FirstOrDefault(x => x.AsBsonDocument["user_id"] == Data["current_player"])?.AsBsonDocument;
+            if (player is null) return false;
+            if (player["queue"].AsBsonArray.Count > 0) return true;
+            return false;
+        }
+
+        public async Task MakeQueuePick(CommandContext ctx)
+        {
+            var player = Data["players"].AsBsonArray
+                .FirstOrDefault(x => x.AsBsonDocument["user_id"] == Data["current_player"])?.AsBsonDocument;
+
+            if (player is null) return;
+
+            var queue = player["queue"].AsBsonArray;
+
+            for (var i = 0; i < queue.Count; ++i)
+            {
+                if (!Data["pokemons"].AsBsonArray.Contains(queue[i]))
+                {
+                    await UpdateField(async doc =>
+                    {
+                        var current = doc["players"].AsBsonArray
+                            .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"])?.AsBsonDocument;
+                        current["pokemon"].AsBsonArray.Add(queue[i]);
+                        var pokemon = queue[i].AsString;
+                        doc["pokemons"].AsBsonArray.Add(queue[i]);
+                        current["queue"].AsBsonArray.RemoveAt(i);
+                        var embed = new DiscordEmbedBuilder
+                        {
+                            Description = $"{_currentPlayer.Mention}, has drafted {pokemon}",
+                            Color = DiscordColor.Green,
+                            ImageUrl = $"https://pokemonshowdown.com/sprites/ani/{pokemon}.gif"
+                        };
+
+                        await _draftChannel.SendMessageAsync(embed: embed.Build()).ConfigureAwait(false);
+
+                        return doc;
+                    });
+                    break;
+                }
+
+                await UpdateField(doc =>
+                {
+                    var current = doc["players"].AsBsonArray
+                        .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"])?.AsBsonDocument;
+                    current["queue"].AsBsonArray.RemoveAt(i);
+                    return Task.FromResult(doc);
+                });
+            }
+
+            await NextPlayer(ctx).ConfigureAwait(false);
+        }
+
         public async Task<Pokemon> GetPokemon(string name)
         {
             var pokeClient = new PokeApiClient();
@@ -110,6 +169,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     PokemonUtils.ResolveName(name)).ConfigureAwait(false);
             return pokemon;
         }
+
         public async Task<bool> DoesPokemonExist(string name)
         {
             // Since PokeApiNet doesn't actually handle when a pokemon doesn't exist, means I have to make my own.
@@ -204,9 +264,9 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"])?.AsBsonDocument;
                 current?["pokemon"].AsBsonArray.Add(pokemon1);
                 current?["pokemon"].AsBsonArray.Add(pokemon2);
-                return doc;
+                return Task.FromResult(doc);
             }).ConfigureAwait(false);
-            
+
             var embed1 = new DiscordEmbedBuilder
             {
                 Description = $"{_currentPlayer.Mention}, has drafted {pokemon1}",
@@ -215,7 +275,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
             };
 
             await _draftChannel.SendMessageAsync(embed: embed1.Build()).ConfigureAwait(false);
-            
+
             var embed2 = new DiscordEmbedBuilder
             {
                 Description = $"{_currentPlayer.Mention}, has drafted {pokemon2}",
@@ -255,6 +315,12 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
         public async Task GetPick(CommandContext ctx)
         {
+            if (await PlayerHasQueue())
+            {
+                await MakeQueuePick(ctx);
+                return;
+            }
+
             // Asks for one pick.
             await _draftingChannel.SendMessageAsync(
                 $"{_currentPlayer.Mention}, its your turn. type your pick in this channel.").ConfigureAwait(false);
@@ -266,6 +332,18 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 if (result.TimedOut)
                 {
                     break;
+                }
+                else if (result.Content.Equals("done", StringComparison.OrdinalIgnoreCase))
+                {
+                    await UpdateField(doc =>
+                    {
+                        var current = doc["players"].AsBsonArray
+                            .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"])?.AsBsonDocument;
+                        current["done"] = true;
+                        return Task.FromResult(doc);
+                    });
+                    await NextPlayer(ctx);
+                    return;
                 }
                 else
                 {
@@ -300,9 +378,9 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     .FirstOrDefault(x => x.AsBsonDocument["user_id"] == doc["current_player"]);
                 current?.AsBsonDocument["pokemon"].AsBsonArray.Add(pokemon);
                 doc["pokemons"].AsBsonArray.Add(pokemon);
-                return doc;
+                return Task.FromResult(doc);
             }).ConfigureAwait(false);
-            
+
             var embed = new DiscordEmbedBuilder
             {
                 Description = $"{_currentPlayer.Mention}, has drafted {pokemon}",
@@ -345,7 +423,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                         if (currentPlayer is null) order = 1;
                         else order = currentPlayer.AsBsonDocument["order"].AsInt32 + 1;
                     }
-                    
+
                 }
                 else if (doc["direction"].AsString.ToUpper().Equals("DOWN"))
                 {
@@ -366,20 +444,50 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
                 doc["current_player"] = doc["players"].AsBsonArray
                     .FirstOrDefault(x => x.AsBsonDocument["order"].AsInt32 == order)?.AsBsonDocument["user_id"];
-                return doc;
+                return Task.FromResult(doc);
             });
-            
+
+            if (order == Data["players"].AsBsonArray.Count && Data["round"] == Data["max_rounds"])
+            {
+                await Done(ctx);
+                return;
+            }
+
             var member = await ctx.Guild.GetMemberAsync(_currentPlayer.Id);
             await member.RevokeRoleAsync(_role);
             Console.WriteLine(order);
             Console.WriteLine(Data["current_player"]);
             _currentPlayer = await ctx.Guild.GetMemberAsync(ulong.Parse(Data["current_player"].AsString));
-            
+
             member = await ctx.Guild.GetMemberAsync(_currentPlayer.Id);
             await member.GrantRoleAsync(_role);
-            
+
             await StartDraft(ctx);
-           
+        }
+
+        public async Task Done(CommandContext ctx)
+        {
+            var builder = new DiscordEmbedBuilder
+            {
+                Title = "Draft is completed.",
+                Description = "Below is all of the player's picks, for this draft.\n" +
+                              "Thank you for using me for your draft.",
+                Color = DiscordColor.Green
+            };
+
+            foreach (var player in Data["players"].AsBsonArray)
+            {
+                var user = await ctx.Guild.GetMemberAsync(ulong.Parse(player.AsBsonDocument["user_id"].AsString));
+                var pokemons = string.Empty;
+                foreach (var pokemon in player.AsBsonDocument["pokemon"].AsBsonArray)
+                {
+                    pokemons += $"{pokemon.AsString}\n";
+                }
+
+                builder.AddField($"Player {user.Username}", pokemons);
+            }
+
+            await ctx.Channel.SendMessageAsync(embed: builder.Build()).ConfigureAwait(false);
         }
     }
 

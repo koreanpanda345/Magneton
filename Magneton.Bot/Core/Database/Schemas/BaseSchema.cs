@@ -7,11 +7,11 @@ namespace Magneton.Bot.Core.Database.Schemas
         private readonly BsonDocument _document;
 
         public BaseSchema(BsonDocument document) => _document = document;
-        
+
 
         public BsonDocument Document
         {
-            get { return _document;  }
+            get { return _document; }
         }
 
         public override string ToString()

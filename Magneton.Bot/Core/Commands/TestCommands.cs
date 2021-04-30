@@ -16,12 +16,12 @@ namespace Magneton.Bot.Core.Commands
             await ctx.Channel.SendMessageAsync("Starting test").ConfigureAwait(false);
             var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
             var data = await MongoHelper.Draft.GetAsync(filter);
-            
+
             var model = new DraftSchema(data);
 
             model.Id = 100;
             await ctx.Channel.SendMessageAsync("Successful").ConfigureAwait(false);
         }
-        
+
     }
 }

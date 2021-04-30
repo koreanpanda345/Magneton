@@ -21,27 +21,29 @@ namespace Magneton.Bot.Core
         public DiscordClient Client { get; private set; }
         public InteractivityExtension Interactivity { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
+
         public async Task RunAsync()
         {
             var json = string.Empty;
-            using(var fs = File.OpenRead("Resources/config.json"))
+            using (var fs = File.OpenRead("Resources/config.json"))
             using (var sr = new StreamReader(fs, new UTF8Encoding(false)))
                 json = await sr.ReadToEndAsync().ConfigureAwait(false);
 
             var configJson = JsonConvert.DeserializeObject<ConfigJson>(json);
-            
+
             var config = new DiscordConfiguration
             {
                 Token = configJson.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
                 MinimumLogLevel = LogLevel.Information,
-                Intents = DiscordIntents.GuildMessages | DiscordIntents.DirectMessages | DiscordIntents.Guilds | DiscordIntents.GuildMessageReactions | DiscordIntents.DirectMessageReactions
+                Intents = DiscordIntents.GuildMessages | DiscordIntents.DirectMessages | DiscordIntents.Guilds |
+                          DiscordIntents.GuildMessageReactions | DiscordIntents.DirectMessageReactions
             };
             MongoHelper.MongoConnection = configJson.MongoConnection;
             MongoHelper.MongoDatabase = "data";
             Client = new DiscordClient(config);
-            
+
             Client.Ready += ClientOnReady;
             Client.SocketErrored += (sender, args) =>
             {
@@ -54,7 +56,7 @@ namespace Magneton.Bot.Core
                 Client.Logger.Log(LogLevel.Information, "Client is resuming now.");
                 return Task.CompletedTask;
             };
-            
+
             Client.UseInteractivity(new InteractivityConfiguration
             {
                 Timeout = TimeSpan.FromMinutes(2),
@@ -62,25 +64,38 @@ namespace Magneton.Bot.Core
                 PaginationDeletion = PaginationDeletion.DeleteMessage,
                 PollBehaviour = PollBehaviour.KeepEmojis,
             });
-            
+
             var commandsConfig = new CommandsNextConfiguration
             {
-                StringPrefixes = new string[] { configJson.Prefix},
+                StringPrefixes = new string[] {configJson.Prefix},
                 EnableMentionPrefix = true,
                 EnableDms = true,
                 IgnoreExtraArguments = true,
                 CaseSensitive = false
             };
-            
+
             MongoHelper.ConnectToMongoService();
-            
+
             Commands = Client.UseCommandsNext(commandsConfig);
             Commands.RegisterCommands<MiscellaneousCommands>();
             Commands.RegisterCommands<DraftCommands>();
             Commands.RegisterCommands<DocumentationCommands>();
-            //Commands.RegisterCommands<DraftPlayerCommands>();
+            Commands.RegisterCommands<DraftPlayerCommands>();
             Commands.RegisterCommands<ToolCommands>();
             Commands.RegisterCommands<TestCommands>();
+
+            Commands.CommandErrored += (sender, args) =>
+            {
+                var builder = new DiscordEmbedBuilder
+                {
+                    Title = "An Error has Occured!",
+                    Description = $"```{args.Exception.StackTrace}```\n" +
+                                  $"**{args.Exception.Message}**",
+                    Color = DiscordColor.Red
+                };
+                args.Context.Channel.SendMessageAsync(embed: builder.Build()).ConfigureAwait(false);
+                return Task.CompletedTask;
+            };
             await Client.ConnectAsync();
 
             await Task.Delay(-1);

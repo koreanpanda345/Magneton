@@ -1,5 +1,11 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
 using DSharpPlus;
+using PokeApiNet;
 
 namespace Magneton.Bot.Core.Utils
 {
@@ -32,6 +38,20 @@ namespace Magneton.Bot.Core.Utils
 
             if (name.Contains("Therian")) name = name.Replace("therian", "") + "-therian";
             return name.TrimStart('-');
+        }
+        
+        public static async Task<bool> DoesPokemonExist(string name)
+        {
+            // Since PokeApiNet doesn't actually handle when a pokemon doesn't exist, means I have to make my own.
+            var client = new HttpClient();
+            // https://pokeapi.co/api/v2/pokemon/ditto
+            client.BaseAddress = new Uri("https://pokeapi.co/api/v2/");
+            var version = typeof(PokeApiClient).Assembly.GetName().Version;
+            var userAgent = new ProductHeaderValue("PokeApiNet", $"{version.Major}.{version.Minor}");
+            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(userAgent));
+            var result = await client.GetAsync($"pokemon/{ResolveName(name)}", CancellationToken.None);
+            if (result.Content.ReadAsStringAsync().Result.Equals("Not Found")) return false;
+            return true;
         }
     }
 }

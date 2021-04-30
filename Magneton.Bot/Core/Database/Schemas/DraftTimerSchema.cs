@@ -9,19 +9,22 @@ namespace Magneton.Bot.Core.Database.Schemas
 
     public class DraftSchema : BaseSchema
     {
-        public DraftSchema(BsonDocument document): base(document){}
+        public DraftSchema(BsonDocument document) : base(document)
+        {
+        }
 
         public FilterDefinition<BsonDocument> Filter
         {
             get { return Builders<BsonDocument>.Filter.Eq("channel_id", Document["channel_id"]); }
         }
+
         public string LeagueName
         {
             get { return Document["league_name"].AsString; }
             set
             {
                 Document["league_name"] = value;
-                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
             }
         }
 
@@ -40,7 +43,7 @@ namespace Magneton.Bot.Core.Database.Schemas
             set
             {
                 Document["pokemons"] = BsonValue.Create(value);
-                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
             }
         }
 
@@ -50,13 +53,13 @@ namespace Magneton.Bot.Core.Database.Schemas
             set
             {
                 Document["id"] = value;
-                MongoHelper.Draft.UpdateAsync(Filter,Document).GetAwaiter().GetResult();
+                MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
             }
         }
 
         public int MaxRounds
         {
-            get { return Document["max_rounds"].AsInt32;}
+            get { return Document["max_rounds"].AsInt32; }
             set
             {
                 Document["max_rounds"] = value;
@@ -66,7 +69,7 @@ namespace Magneton.Bot.Core.Database.Schemas
 
         public int TotalSkips
         {
-            get { return Document["total_skips"].AsInt32;}
+            get { return Document["total_skips"].AsInt32; }
             set
             {
                 Document["total_skips"] = value;
@@ -76,7 +79,7 @@ namespace Magneton.Bot.Core.Database.Schemas
 
         public int Round
         {
-            get { return Document["round"].AsInt32;}
+            get { return Document["round"].AsInt32; }
             set
             {
                 Document["round"] = value;
@@ -86,7 +89,7 @@ namespace Magneton.Bot.Core.Database.Schemas
 
         public ulong? CurrentPlayer
         {
-            get { return ulong.Parse(Document["current_player"].AsString);}
+            get { return ulong.Parse(Document["current_player"].AsString); }
             set
             {
                 Document["current_player"] = value.ToString();
@@ -96,7 +99,7 @@ namespace Magneton.Bot.Core.Database.Schemas
 
         public string SheetId
         {
-            get { return Document["sheet_id"].AsString;}
+            get { return Document["sheet_id"].AsString; }
             set
             {
                 Document["sheet_id"] = value;
@@ -106,27 +109,33 @@ namespace Magneton.Bot.Core.Database.Schemas
 
         public ulong ChannelId
         {
-            get { return ulong.Parse(Document["channel_id"].AsString);}
+            get { return ulong.Parse(Document["channel_id"].AsString); }
             set
             {
                 Document["channel_id"] = value.ToString();
                 MongoHelper.Draft.UpdateAsync(Filter, Document).GetAwaiter().GetResult();
             }
         }
-        
+
     }
+
     public class DraftTimerSchema : BaseSchema
     {
-        public DraftTimerSchema(BsonDocument document) : base (document){}
+        public DraftTimerSchema(BsonDocument document) : base(document)
+        {
+        }
+
         public string _Id
         {
             get { return Document["_id"].AsString; }
         }
+
         public string LeagueName
         {
             get { return Document["league_name"].AsString; }
             set { Document["league_name"] = value; }
         }
+
         public List<string> Pokemons
         {
             get
@@ -141,11 +150,13 @@ namespace Magneton.Bot.Core.Database.Schemas
             }
             set { Document["pokemon"] = BsonValue.Create(value); }
         }
+
         public string Id
         {
             get { return Document["id"].AsString; }
             set { Document["id"] = value; }
         }
+
         public int MaxRounds
         {
             get { return Document["max_rounds"].AsInt32; }
@@ -241,6 +252,7 @@ namespace Magneton.Bot.Core.Database.Schemas
                 foreach (var tier in Document["tiers"].AsBsonArray)
                 {
                 }
+
                 return list;
             }
         }
@@ -261,7 +273,7 @@ namespace Magneton.Bot.Core.Database.Schemas
                         Pokemon = new List<string>(),
                         Queue = new List<string>()
                     };
-                    
+
                     foreach (var pokemon in player.AsBsonArray["pokemon"].AsBsonArray)
                     {
                         data.Pokemon.Add(pokemon.AsString);
@@ -272,6 +284,7 @@ namespace Magneton.Bot.Core.Database.Schemas
                         data.Pokemon.Add(pokemon.AsString);
                     }
                 }
+
                 return list;
             }
         }

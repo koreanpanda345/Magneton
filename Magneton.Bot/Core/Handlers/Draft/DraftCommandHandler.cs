@@ -49,8 +49,8 @@ namespace Magneton.Bot.Core.Handlers.Draft
         {
             public static async Task CreateDraftCommand(CommandContext ctx)
             {
-        
-                    var drafts = MongoHelper.database.GetCollection<BsonDocument>("drafttimers");
+
+                var drafts = MongoHelper.database.GetCollection<BsonDocument>("drafttimers");
                 var result = await DraftMethods.HandleDialogue(ctx, drafts);
                 if (!result.DialogueSucceeded) return;
 
@@ -130,6 +130,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                         $"Successfully made the draft. Your league's id is `{result.Id}`. Use this id when you are using any draft command that is outside the draft/drafting channel.")
                     .ConfigureAwait(false);
             }
+
             public static async Task DeleteDraftCommand(CommandContext ctx)
             {
                 var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
@@ -187,6 +188,101 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
                 await ctx.Channel.SendMessageAsync("I will not delete the draft.").ConfigureAwait(false);
             }
+
+            public static async Task EditDraftCommand(CommandContext ctx, string option = null)
+            {
+                var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
+                var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
+                var drafts = MongoHelper.database.GetCollection<BsonDocument>("drafttimers");
+                if (option is null)
+                {
+                    var builder = new DiscordEmbedBuilder
+                    {
+                        Title = $"{draft["league_name"]}'s Configurations",
+                        Description = "If you want to edit one, you can use this command again, and pass the property's name that you want to change.\n" +
+                                      "If the name has a * at the end, that means it can't be edited."
+                    };
+
+                    builder.AddField("League Name", draft["league_name"].AsString, true);
+                    builder.AddField("Id*", $"{draft["id"].AsInt32}", true);
+                    builder.AddField("Timer", $"{draft["timer"].AsInt32} Minutes", true);
+                    var channel = ctx.Guild.GetChannel(ulong.Parse(draft["drafting_channel_id"].AsString));
+                    builder.AddField("Drafting Channel", channel.Mention, true);
+                    var role = ctx.Guild.GetRole(ulong.Parse(draft["drafting_role_id"].AsString));
+                    builder.AddField("Drafting Role", role.Mention, true);
+                    var _channel = ctx.Guild.GetChannel(ulong.Parse(draft["channel_id"].AsString));
+                    builder.AddField("Draft Channel*", _channel.Mention, true);
+                    builder.AddField("Maximum Rounds", $"{draft["max_rounds"].AsInt32} rounds", true);
+                    builder.AddField("Total Skips", $"{draft["total_skips"].AsInt32} skips", true);
+                    await ctx.Channel.SendMessageAsync(embed: builder.Build()).ConfigureAwait(false);
+                    return;
+                }
+                var result = await DraftMethods.HandleDialogueForEditDraft(ctx, option, drafts);
+                switch (option.ToLower().Trim())
+                {
+                    case "name":
+                        draft["league_name"] = result.Name;
+                        await ctx.Channel.SendMessageAsync($"League name has been changed to {result.Name}").ConfigureAwait(false);
+                        break;
+                    case "timer":
+                        draft["timer"] = result.Timer;
+                        await ctx.Channel.SendMessageAsync($"Timer has been changed to {result.Timer} minutes.").ConfigureAwait(false);
+                        break;
+                    case "channel":
+                        draft["drafting_channel_id"] = result.DraftingChannel.Id.ToString();
+                        await ctx.Channel
+                            .SendMessageAsync($"Drafting channel has been changed to {result.DraftingChannel.Mention}.")
+                            .ConfigureAwait(false);
+                        break;
+                    case "role":
+                        draft["drafting_role_id"] = result.DraftRole.Id.ToString();
+                        await ctx.Channel.SendMessageAsync(
+                            $"Draft role has been changed to {result.DraftRole.Mention}.").ConfigureAwait(false);
+                        break;
+                    case "rounds":
+                        draft["max_rounds"] = result.MaxRounds;
+                        await ctx.Channel.SendMessageAsync($"Max Rounds has been changed to {result.MaxRounds}.")
+                            .ConfigureAwait(false);
+                        break;
+                    case "skips":
+                        draft["total_skips"] = result.TotalSkips;
+                        await ctx.Channel.SendMessageAsync($"Total Skips has been changed to {result.TotalSkips}.")
+                            .ConfigureAwait(false);
+                        break;
+                }
+                
+                await MongoHelper.Draft.UpdateAsync(filter, draft);
+            }
+
+            public static async Task RandomizeDraftCommand(CommandContext ctx, int times = 3)
+            {
+                var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
+                var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
+                var list = draft["players"].AsBsonArray.ToList();
+                var shuffled = new List<BsonValue>();
+                for (var i = 0; i < times; ++i)
+                {
+                    shuffled = list.OrderBy(x => Guid.NewGuid()).ToList();
+                }
+
+                draft["players"] = new BsonArray(shuffled.ToArray());
+                var builder = new DiscordEmbedBuilder
+                {
+                    Title = "Draft Order",
+                    Description = $"Randomized {times} times"
+                };
+
+                foreach (var player in draft["players"].AsBsonArray)
+                {
+                    var user = await ctx.Guild.GetMemberAsync(ulong.Parse(player.AsBsonDocument["user_id"].AsString));
+                    builder.AddField($"Pick {player.AsBsonDocument["order"]}", $"{user.Mention}");
+                }
+
+                await MongoHelper.Draft.UpdateAsync(filter, draft).ConfigureAwait(false);
+                await ctx.Channel.SendMessageAsync(embed: builder.Build()).ConfigureAwait(false);
+            }
+            
+
             public static async Task StartDraftCommand(CommandContext ctx)
             {
                 await ctx.Channel.TriggerTypingAsync().ConfigureAwait(false);
@@ -194,7 +290,14 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
                 var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
                 Console.WriteLine(draft["league_name"]);
-                Console.WriteLine(draft["current_player"].AsString);
+                Console.WriteLine(draft.ToJson());
+                Console.WriteLine(string.IsNullOrWhiteSpace(draft["current_player"].AsString));
+                if (string.IsNullOrWhiteSpace(draft["current_player"].AsString))
+                    draft["current_player"] = draft["players"].AsBsonArray.FirstOrDefault(x => x["order"].AsInt32 == 1)
+                        ?.AsBsonDocument["user_id"].AsString;
+                Console.WriteLine(draft["players"].AsBsonArray.FirstOrDefault(x => x["order"].AsInt32 == 1)
+                    ?.AsBsonDocument["user_id"].AsString);
+                await MongoHelper.Draft.UpdateAsync(filter, draft).ConfigureAwait(false);
                 var currentPlayer = ulong.Parse(draft["current_player"].AsString);
                 Console.WriteLine("something");
                 var player = await ctx.Guild.GetMemberAsync(currentPlayer);
@@ -209,6 +312,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 await ctx.Channel.SendMessageAsync("Starting Draft").ConfigureAwait(false);
                 await handler.StartDraft(ctx);
             }
+
             public static async Task StopDraftCommand(CommandContext ctx)
             {
                 var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
@@ -221,6 +325,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     .ConfigureAwait(false);
 
             }
+
             public static class Players
             {
                 public static async Task AddCommand(CommandContext ctx)
@@ -240,7 +345,10 @@ namespace Magneton.Bot.Core.Handlers.Draft
                         draft["players"].AsBsonArray.Add(new BsonDocument()
                         {
                             {"user_id", user.Id.ToString()},
-                            {"order", draft["players"].AsBsonArray.Count},
+                            {
+                                "order",
+                                draft["players"].AsBsonArray.Count == 0 ? 1 : draft["players"].AsBsonArray.Count + 1
+                            },
                             {"queue", new BsonArray()},
                             {"pokemon", new BsonArray()},
                             {"done", false},
@@ -252,34 +360,37 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
                     await ctx.Channel.SendMessageAsync("Added Player(s).").ConfigureAwait(false);
                 }
+
                 public static async Task RemoveCommand(CommandContext ctx)
-               {
-                   var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
-                   var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
-                   foreach (var user in ctx.Message.MentionedUsers)
-                   {
-                       var data = (BsonDocument) draft["players"].AsBsonArray
-                           .FirstOrDefault(x => x.AsBsonDocument["user_id"].AsString == user.Id.ToString());
+                {
+                    var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
+                    var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
+                    foreach (var user in ctx.Message.MentionedUsers)
+                    {
+                        var data = (BsonDocument) draft["players"].AsBsonArray
+                            .FirstOrDefault(x => x.AsBsonDocument["user_id"].AsString == user.Id.ToString());
                         // If player doesn't exist in the draft data.
-                       if (data is null)
-                       {
-                           await ctx.Channel.SendMessageAsync("This player is not in the draft already.")
-                               .ConfigureAwait(false);
-                           return;
-                       }
-                       // else the player does exist, and we can remove it from the draft data.
-                       draft["players"].AsBsonArray.Remove(data);
+                        if (data is null)
+                        {
+                            await ctx.Channel.SendMessageAsync("This player is not in the draft already.")
+                                .ConfigureAwait(false);
+                            return;
+                        }
 
-                       await MongoHelper.Draft.UpdateAsync(filter, draft).ConfigureAwait(false);
+                        // else the player does exist, and we can remove it from the draft data.
+                        draft["players"].AsBsonArray.Remove(data);
 
-                       await ctx.Channel.SendMessageAsync("Removed Player(s).").ConfigureAwait(false);
-                   }
-               }
+                        await MongoHelper.Draft.UpdateAsync(filter, draft).ConfigureAwait(false);
+
+                        await ctx.Channel.SendMessageAsync("Removed Player(s).").ConfigureAwait(false);
+                    }
+                }
+
                 public static async Task GetCommand(CommandContext ctx)
                 {
                     var filter = Builders<BsonDocument>.Filter.Eq("channel_id", ctx.Channel.Id.ToString());
                     var draft = await MongoHelper.Draft.GetAsync(filter).ConfigureAwait(false);
-                    
+
                     var builder = new DiscordEmbedBuilder
                     {
                         Title = "Players in the draft.",
@@ -289,16 +400,84 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     foreach (var player in draft["players"].AsBsonArray)
                     {
                         var _player = player.AsBsonDocument;
-                        builder.AddField($"Player {(await ctx.Guild.GetMemberAsync(ulong.Parse(_player["user_id"].AsString))).Username}", $"Order: {_player["order"].AsInt32}");
+                        builder.AddField(
+                            $"Player {(await ctx.Guild.GetMemberAsync(ulong.Parse(_player["user_id"].AsString))).Username}",
+                            $"Order: {_player["order"].AsInt32}");
                     }
 
                     await ctx.Channel.SendMessageAsync(embed: builder.Build()).ConfigureAwait(false);
                 }
             }
         }
+
         static class DraftMethods
         {
-            public static async Task<DraftStruct.CreateDraftDialogResult> HandleDialogue(CommandContext ctx, IMongoCollection<BsonDocument> drafts)
+
+            public static async Task<DraftStruct.EditDraftDialogResult> HandleDialogueForEditDraft(CommandContext ctx,
+                string option, IMongoCollection<BsonDocument> data)
+            {
+                var result = new DraftStruct.EditDraftDialogResult();
+                switch (option.ToLower().Trim())
+                {
+                    case "name":
+                        var searchNameList = new List<string>();
+
+                        foreach (var draft in data.Find(new BsonDocument()).ToList())
+                        {
+                            searchNameList.Add(draft["league_name"].AsString);
+                        }
+
+                        var nameStep = new TextStep("What do you want to change the league name to?", null, 3, null,
+                            searchNameList.ToArray(),
+                            "There is already a league with that name.");
+
+                        var dialogue = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, nameStep);
+
+                        nameStep.OnValidResult += content => { result.Name = content; };
+                        await dialogue.ProcessDialogue();
+                        break;
+                    case "timer":
+                        var timerStep = new IntStep("What do you want to change the timer to?\nTimer is in minutes.", null);
+                        var dialogue_1 = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, timerStep);
+
+                        timerStep.OnValidResult += content => { result.Timer = content; };
+                        await dialogue_1.ProcessDialogue();
+                        break;
+                    case "channel":
+                        var channelStep = new ChannelStep("What do you want to change the Drafting channel to?", null);
+                        var dialogue_2 = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, channelStep);
+
+                        channelStep.OnValidResult += content => { result.DraftingChannel = content; };
+                        await dialogue_2.ProcessDialogue();
+                        break;
+                    case"role":
+                        var roleStep = new RoleStep("What do you want to change the Draft Role to be?", null);
+                        var dialogue_3 = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, roleStep);
+
+                        roleStep.OnValidResult += content => { result.DraftRole = content; };
+                        await dialogue_3.ProcessDialogue();
+                        break;
+                    case "rounds":
+                        var roundStep = new IntStep("What do you want to change the maximum rounds to?", null, 8, 12);
+                        var dialogue_4 = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, roundStep);
+
+                        roundStep.OnValidResult += content => { result.MaxRounds = content; };
+                        await dialogue_4.ProcessDialogue();
+                        break;
+                    case "skips":
+                        var skipStep = new IntStep("What do you want to change the total skips to?", null, 0, 5);
+                        var dialogue_5 = new DialogueHandler(ctx.Client, ctx.Channel, ctx.User, skipStep);
+
+                        skipStep.OnValidResult += content => { result.TotalSkips = content; };
+                        await dialogue_5.ProcessDialogue();
+                        break;
+                }
+
+                return result;
+            }
+
+            public static async Task<DraftStruct.CreateDraftDialogResult> HandleDialogue(CommandContext ctx,
+                IMongoCollection<BsonDocument> drafts)
             {
                 var data = new DraftStruct.CreateDraftDialogResult();
                 var getChannelStep = new ChannelStep("What is the channel?", null);
@@ -341,7 +520,7 @@ namespace Magneton.Bot.Core.Handlers.Draft
                     });
                 var timerStep = new IntStep("How many mintues will timer be?", null);
                 var skipStep = new IntStep("How many skips can a player have before going on auto skip?", null, 0, 5);
-                var roundStep = new IntStep("How many rounds are there?", null, 9, 12);
+                var roundStep = new IntStep("How many rounds are there?", null, 8, 12);
                 var searchNameList = new List<string>();
 
                 foreach (var draft in drafts.Find(new BsonDocument()).ToList())
@@ -412,13 +591,14 @@ namespace Magneton.Bot.Core.Handlers.Draft
 
         static class DraftConstants
         {
-             
+
             public static BsonDocument QuickStart = new BsonDocument
             {
                 {"timer", 10},
                 {"total_skips", 3},
                 {"max_rounds", 11}
             };
+
             public static BsonDocument Default = new BsonDocument
             {
                 {"timer", 10},
@@ -435,18 +615,20 @@ namespace Magneton.Bot.Core.Handlers.Draft
                         "quick start",
                         "qs",
                         "quick_start"
-                    }, QuickStart
+                    },
+                    QuickStart
                 },
                 {
                     new List<string>
                     {
                         "default",
                         "d"
-                    }, 
+                    },
                     Default
                 }
             };
         }
+
         static class DraftStruct
         {
 
@@ -456,6 +638,27 @@ namespace Magneton.Bot.Core.Handlers.Draft
                 public BsonDocument Document { get; set; }
                 public string TemplateName { get; set; }
             }
+
+            public struct EditDraftDialogResult
+            {
+                public string Name { get; set; }
+                public int MaxRounds { get; set; }
+                public int TotalSkips { get; set; }
+                public int Timer { get; set; }
+                public DiscordRole DraftRole { get; set; }
+                public DiscordChannel DraftingChannel { get; set; }
+                public bool DialogueSucceeded { get; set; }
+                public int Id { get; set; }
+                public DraftMode Mode { get; set; }
+            }
+
+            public struct DraftMode
+            {
+                public bool Dm { get; set; }
+                public bool Skip { get; set; }
+                public bool Text { get; set; }
+            }
+
             public struct CreateDraftDialogResult
             {
                 public string Name { get; set; }

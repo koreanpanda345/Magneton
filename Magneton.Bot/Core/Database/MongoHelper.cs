@@ -29,10 +29,7 @@ namespace Magneton.Bot.Core.Database
 
         internal static DraftManager Draft
         {
-            get
-            {
-                return new DraftManager(client, database);
-            }
+            get { return new DraftManager(client, database); }
         }
     }
 }
